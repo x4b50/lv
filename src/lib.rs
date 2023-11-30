@@ -1,22 +1,32 @@
 // #[allow(dead_code)]
 
+use core::fmt;
+
 #[derive(Debug)]
 pub struct Lada {
-    stack: Vec<usize>,
+    pub halted: bool,
+    pub ip: usize,
+    // stack: Vec<isize>,
+    stack: Box<[isize]>,
     stack_size: usize,
+    pub program: Vec<Inst>,
 }
 
+#[derive(Debug)]
 pub struct Inst {
     kind: InstType,
-    operand: Option<usize>,
+    operand: Option<isize>,
 }
 
+#[derive(Debug)]
 pub enum InstType {
     PUSH,
     PLUS,
     MINUS,
     MULT,
     DIV,
+    JMP,
+    HALT,
 }
 
 #[derive(Debug)]
@@ -26,20 +36,26 @@ pub enum ExecErr {
     IllegalInst,
     DivByZero,
     NoOperand,
+    IllegalAddr,
 }
 
 impl Lada {
-    pub fn init(stack_size: usize) -> Lada {
+    pub fn init<const STACK_SIZE: usize>(program: Vec<Inst>) -> Lada {
         Lada {
-            stack: vec![0;stack_size],
+            ip: 0,
+            halted: false,
+            // stack: vec![0;stack_size],
+            stack: Box::new([0;STACK_SIZE]),
             stack_size: 0,
+            program
         }
     }
 
-    pub fn exec_inst(&mut self, inst: &Inst) -> Result<(), ExecErr> {
+    pub fn exec_inst(&mut self) -> Result<(), ExecErr> {
+        let inst = &self.program[self.ip];
         match inst.kind {
             InstType::PUSH => {
-                if self.stack_size >= self.stack.capacity() {
+                if self.stack_size >= self.stack.len() {
                     return Err(ExecErr::StackOverflow)
                 }
                 match inst.operand {
@@ -82,23 +98,53 @@ impl Lada {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
                 }
+                if self.stack[self.stack_size-1] == 0 {
+                    return Err(ExecErr::DivByZero);
+                }
                 self.stack[self.stack_size-2] /= self.stack[self.stack_size-1];
                 self.stack_size -= 1;
                 self.stack[self.stack_size] = 0;
             }
+
+            InstType::JMP => {
+                match inst.operand {
+                    Some(op) => {
+                        if op < 0 {
+                            return Err(ExecErr::IllegalAddr);
+                        }
+                        self.ip = op as usize;
+                        return Ok(())
+                    }
+                    None => return Err(ExecErr::NoOperand)
+                }
+            }
+
+            InstType::HALT => self.halted = true
 
             // _ => {
                 // return Err(ExecErr::IllegalInst);
             // }
         }
 
+        self.ip += 1;
         Ok(())
+    }
+
+    pub fn print_stack(&self) {
+        println!("{:?}", self.stack);
+    }
+
+    pub fn print_stack_pretty(&self) {
+        println!("{:#?}", self.stack);
     }
 }
 
 impl Inst {
-    pub fn push(operand: usize) -> Inst {
+    pub fn push(operand: isize) -> Inst {
         Inst { kind: InstType::PUSH, operand: Some(operand) }
+    }
+    pub fn jmp(operand: isize) -> Inst {
+        Inst { kind: InstType::JMP, operand: Some(operand) }
     }
 
     pub fn plus() -> Inst {
@@ -112,5 +158,18 @@ impl Inst {
     }
     pub fn div() -> Inst {
         Inst { kind: InstType::DIV, operand: None }
+    }
+    pub fn halt() -> Inst {
+        Inst { kind: InstType::HALT, operand: None }
+    }
+}
+
+impl fmt::Display for Inst {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.operand {
+            Some(o) => write!(f, "{:?} {}", self.kind, o),
+            None => write!(f, "{:?}", self.kind)
+        }
+        
     }
 }
