@@ -1,15 +1,14 @@
-#[allow(dead_code)]
+// #[allow(dead_code)]
 
 #[derive(Debug)]
-pub struct VM {
+pub struct Lada {
     stack: Vec<usize>,
     stack_size: usize,
 }
 
-// pub probably for now
 pub struct Inst {
-    pub kind: InstType,
-    pub operand: Option<usize>,
+    kind: InstType,
+    operand: Option<usize>,
 }
 
 pub enum InstType {
@@ -29,15 +28,15 @@ pub enum ExecErr {
     NoOperand,
 }
 
-impl VM {
-    pub fn init(cap: usize) -> VM {
-        VM {
+impl Lada {
+    pub fn init(cap: usize) -> Lada {
+        Lada {
             stack: vec![0;cap],
             stack_size: 0,
         }
     }
 
-    pub fn exec_inst(&mut self, inst: Inst) -> Result<(), ExecErr> {
+    pub fn exec_inst(&mut self, inst: &Inst) -> Result<(), ExecErr> {
         match inst.kind {
             InstType::PUSH => {
                 if self.stack_size >= self.stack.capacity() {

@@ -1,5 +1,5 @@
 # LV - Lada Virtual
-A simple virtual машина (mashina) with a custom language compiler
+A simple single-threaded virtual машина (machine) with a custom language compiler
 
 TODO:
 - [ ] implement the instruction set
