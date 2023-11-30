@@ -29,9 +29,9 @@ pub enum ExecErr {
 }
 
 impl Lada {
-    pub fn init(cap: usize) -> Lada {
+    pub fn init(stack_size: usize) -> Lada {
         Lada {
-            stack: vec![0;cap],
+            stack: vec![0;stack_size],
             stack_size: 0,
         }
     }
@@ -108,7 +108,7 @@ impl Inst {
         Inst { kind: InstType::MINUS, operand: None }
     }
     pub fn mult() -> Inst {
-        Inst { kind: InstType::MINUS, operand: None }
+        Inst { kind: InstType::MULT, operand: None }
     }
     pub fn div() -> Inst {
         Inst { kind: InstType::DIV, operand: None }

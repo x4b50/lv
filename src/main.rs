@@ -9,11 +9,19 @@ fn main() -> ExitCode {
         Inst::push(69),
         Inst::push(420),
         Inst::plus(),
+        Inst::push(440),
+        Inst::minus(),
+        Inst::push(2),
+        Inst::mult(),
+        Inst::push(14),
+        Inst::div()
     ];
 
     for i in 0..prog.len() {
         match vm.exec_inst(&prog[i]) {
-            Ok(_) => {}
+            Ok(_) => {
+                println!("{:?}", vm);
+            }
             Err(e) => {
                 eprintln!("ERROR: {:?}", e);
                 eprintln!("{:?}", vm);
@@ -21,6 +29,7 @@ fn main() -> ExitCode {
             }
         }
     }
+
     println!("{:?}", vm);
     0.into()
 }
