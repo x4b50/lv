@@ -6,7 +6,6 @@ use core::fmt;
 pub struct Lada {
     pub halted: bool,
     pub ip: usize,
-    // stack: Vec<isize>,
     stack: Box<[isize]>,
     stack_size: usize,
     pub program: Vec<Inst>,
@@ -21,11 +20,17 @@ pub struct Inst {
 #[derive(Debug)]
 pub enum InstType {
     PUSH,
+    POP,
+    DUP,
+    PICK,
     PLUS,
     MINUS,
     MULT,
     DIV,
     JMP,
+    JIF,
+    EQ,
+    PRINT,
     HALT,
 }
 
@@ -52,6 +57,10 @@ impl Lada {
     }
 
     pub fn exec_inst(&mut self) -> Result<(), ExecErr> {
+        if self.ip >= self.program.len() {
+            return Err(ExecErr::IllegalAddr)
+        }
+
         let inst = &self.program[self.ip];
         match inst.kind {
             InstType::PUSH => {
@@ -67,13 +76,46 @@ impl Lada {
                 }
             }
 
+            InstType::POP => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack_size -= 1;
+            }
+
+            InstType::DUP => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                if self.stack_size >= self.stack.len() {
+                    return Err(ExecErr::StackOverflow)
+                }
+                self.stack[self.stack_size] = self.stack[self.stack_size-1];
+                self.stack_size += 1;
+            }
+
+            InstType::PICK => {
+                if self.stack_size >= self.stack.len() {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                match inst.operand {
+                    Some(v) => {
+                        if v < 0 || v >= self.stack_size as isize {
+                            return Err(ExecErr::IllegalAddr);
+                        }
+                        self.stack[self.stack_size] = self.stack[self.stack_size -1 -v as usize];
+                        self.stack_size += 1;
+                    }
+                    None => return Err(ExecErr::NoOperand)
+                }
+            }
+
             InstType::PLUS => {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
                 }
                 self.stack[self.stack_size-2] += self.stack[self.stack_size-1];
                 self.stack_size -= 1;
-                self.stack[self.stack_size] = 0;
             }
 
             InstType::MINUS => {
@@ -82,7 +124,6 @@ impl Lada {
                 }
                 self.stack[self.stack_size-2] -= self.stack[self.stack_size-1];
                 self.stack_size -= 1;
-                self.stack[self.stack_size] = 0;
             }
 
             InstType::MULT => {
@@ -91,7 +132,6 @@ impl Lada {
                 }
                 self.stack[self.stack_size-2] *= self.stack[self.stack_size-1];
                 self.stack_size -= 1;
-                self.stack[self.stack_size] = 0;
             }
 
             InstType::DIV => {
@@ -103,7 +143,6 @@ impl Lada {
                 }
                 self.stack[self.stack_size-2] /= self.stack[self.stack_size-1];
                 self.stack_size -= 1;
-                self.stack[self.stack_size] = 0;
             }
 
             InstType::JMP => {
@@ -119,6 +158,41 @@ impl Lada {
                 }
             }
 
+            InstType::JIF => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                match inst.operand {
+                    Some(op) => {
+                        if op < 0 {
+                            return Err(ExecErr::IllegalAddr);
+                        }
+                        if self.stack[self.stack_size-1] != 0 {
+                            self.stack_size -= 1;
+                            self.ip = op as usize;
+                            return Ok(())
+                        }
+                    }
+                    None => return Err(ExecErr::NoOperand)
+                }
+            }
+
+            InstType::EQ => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-2] = (self.stack[self.stack_size-1] == self.stack[self.stack_size-2]) as isize;
+                self.stack_size -= 1;
+            }
+
+            InstType::PRINT => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                println!("{}", self.stack[self.stack_size-1]);
+                self.stack_size -= 1;
+            }
+
             InstType::HALT => self.halted = true
 
             // _ => {
@@ -130,12 +204,12 @@ impl Lada {
         Ok(())
     }
 
-    pub fn print_stack(&self) {
-        println!("{:?}", self.stack);
-    }
-
-    pub fn print_stack_pretty(&self) {
-        println!("{:#?}", self.stack);
+    pub fn stack_print(&self) {
+        print!("[");
+        for i in 0..self.stack_size-1 {
+            print!("{}, ", self.stack[i]);
+        }
+        println!("{}]", self.stack[self.stack_size-1]);
     }
 }
 
@@ -143,10 +217,22 @@ impl Inst {
     pub fn push(operand: isize) -> Inst {
         Inst { kind: InstType::PUSH, operand: Some(operand) }
     }
+    pub fn pick(operand: isize) -> Inst {
+        Inst { kind: InstType::PICK, operand: Some(operand) }
+    }
     pub fn jmp(operand: isize) -> Inst {
         Inst { kind: InstType::JMP, operand: Some(operand) }
     }
+    pub fn jmpif(operand: isize) -> Inst {
+        Inst { kind: InstType::JIF, operand: Some(operand) }
+    }
 
+    pub fn pop() -> Inst {
+        Inst { kind: InstType::POP, operand: None }
+    }
+    pub fn dup() -> Inst {
+        Inst { kind: InstType::DUP, operand: None }
+    }
     pub fn plus() -> Inst {
         Inst { kind: InstType::PLUS, operand: None }
     }
@@ -158,6 +244,12 @@ impl Inst {
     }
     pub fn div() -> Inst {
         Inst { kind: InstType::DIV, operand: None }
+    }
+    pub fn eq() -> Inst {
+        Inst { kind: InstType::EQ, operand: None }
+    }
+    pub fn print() -> Inst {
+        Inst { kind: InstType::PRINT, operand: None }
     }
     pub fn halt() -> Inst {
         Inst { kind: InstType::HALT, operand: None }

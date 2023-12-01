@@ -1,30 +1,28 @@
 use std::process::ExitCode;
 use lv::{Lada, Inst};
 
-const STACK_CAP: usize = 10;
+const STACK_CAP: usize = 25;
 
 fn main() -> ExitCode {
     let prog: Vec<Inst> = vec![
-        Inst::push(69),
-        Inst::push(420),
+        Inst::push(0),
+        Inst::push(1),
+        Inst::dup(),
+        Inst::pick(2),
         Inst::plus(),
-        Inst::push(440),
-        Inst::minus(),
-        Inst::push(2),
-        Inst::mult(),
-        Inst::push(14),
-        Inst::div(),
-        Inst::jmp(0),
-        Inst::halt()
+        Inst::jmp(2),
+        // Inst::halt()
     ];
 
     // let mut vm = Lada::init(STACK_CAP);
     let mut vm = Lada::init::<STACK_CAP>(prog);
 
     while !vm.halted {
+        // no ln causes glitch when error
+        print!("{}: {}    \t", vm.ip, vm.program[vm.ip]);
         match vm.exec_inst() {
             Ok(_) => {
-                vm.print_stack();
+                vm.stack_print();
             }
             Err(e) => {
                 eprintln!("ERROR: {:?}, Instruciton: {}", e, vm.program[vm.ip]);
