@@ -447,24 +447,4 @@ pub mod file {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn check_asm_translate() {
-        let source: &str = "push 0\npush 69\ndup\npick 2\nadd\nhalt\njmp 2";
-        let asm_prog = file::asm_translate(source).unwrap();
-        let prog = vec![
-            Inst::push(0),
-            Inst::push(69),
-            Inst::dup(),
-            Inst::pick(2),
-            Inst::add(),
-            Inst::halt(),
-            Inst::jmp(2),
-        ];
-        for i in 0..prog.len() {
-            assert!(prog[i] == asm_prog[i]);
-        }
-    }
-}
+mod tests;

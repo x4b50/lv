@@ -1,35 +1,10 @@
 use std::{process::ExitCode, fs};
-use lv::{Lada, Inst, file::*};
+use lv::{Lada, file::*};
 
 const STACK_CAP: usize = 25;
-const DEST: &str = "prog_inst.dat";
 const SOURCE: &str = "code.lv";
 
 fn main() -> ExitCode {
-    /* prog initialisation
-    let mut prog = vec![
-        Inst::push(0),
-        Inst::push(1),
-        Inst::dup(),
-        Inst::pick(2),
-        Inst::add(),
-        Inst::halt(),
-        // Inst::jmp(2),
-    ];
-    // */
-
-    /* debug for file writing
-    let prog_cp = prog.clone();
-    dump_prog_to_file(&mut prog, DEST).unwrap();
-    for i in 0..prog.len() {
-        assert!(prog[i] == prog_cp[i]);
-    }
-    let prog = read_prog_from_file(DEST).unwrap();
-    for i in 0..prog_cp.len() {
-        assert!(prog[i] == prog_cp[i]);
-    }
-    // */
-
     let source = match fs::read(SOURCE) {
         Ok(f) => match String::from_utf8(f) {
             Ok(s) => s,
@@ -52,7 +27,6 @@ fn main() -> ExitCode {
         }
     };
 
-    // /* run
     let mut vm = Lada::init::<STACK_CAP>(prog);
 
     while !vm.halted {
@@ -68,7 +42,6 @@ fn main() -> ExitCode {
             }
         }
     }
-    // */
 
     0.into()
 }
