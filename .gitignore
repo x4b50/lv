@@ -1,3 +1,4 @@
 /target
 prog_inst.dat
 code.lb
+src/examples/*.lb

@@ -54,11 +54,18 @@ impl Lada {
         Lada {
             ip: 0,
             halted: false,
-            // stack: vec![0;stack_size],
             stack: vec![0;stack_cap],
             stack_size: 0,
             program
         }
+    }
+
+    pub fn stack_print(&self) {
+        print!("[");
+        for i in 0..self.stack_size-1 {
+            print!("{}, ", self.stack[i]);
+        }
+        println!("{}]", self.stack[self.stack_size-1]);
     }
 
     pub fn exec_inst(&mut self) -> Result<(), ExecErr> {
@@ -211,14 +218,6 @@ impl Lada {
 
         self.ip += 1;
         Ok(())
-    }
-
-    pub fn stack_print(&self) {
-        print!("[");
-        for i in 0..self.stack_size-1 {
-            print!("{}, ", self.stack[i]);
-        }
-        println!("{}]", self.stack[self.stack_size-1]);
     }
 }
 

@@ -2,12 +2,19 @@
 A simple single-threaded virtual машина (machine) with a custom language compiler
 
 ## Using the VM
-Compiling the program, running the compiler and the virtual machine with stack size equal 32.
+Compiling the program, running the compiler and the virtual machine with stack size equal 32 (default).
 
-``` sh
+``` bash
 cargo build -r
 ./lc code.lv code.lb
 ./lv code.lb 32
+```
+
+## Running examples
+The fibonacci example will cause stack overflow, it is not a bug
+```bash
+cargo build -r
+./src/examples/fib.sh
 ```
 
 ## Writing programs
