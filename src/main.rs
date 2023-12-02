@@ -2,24 +2,27 @@ use std::{process::ExitCode, fs};
 use lv::{Lada, file::*};
 
 const STACK_CAP: usize = 25;
-const SOURCE: &str = "code.lv";
+// const SOURCE: &str = "code.lv";
 
 fn main() -> ExitCode {
-    let source = match fs::read(SOURCE) {
-        Ok(f) => match String::from_utf8(f) {
-            Ok(s) => s,
+    let args: Vec<_> = std::env::args().collect();
+    if args.len() < 2 {
+        eprintln!("Not enough arguments");
+        return 1.into();
+    }
+
+    let mut source: String = args[1].clone();
+    {
+        source = match fs::read_to_string(source) {
+            Ok(f) => {f}
             Err(e) => {
-                eprintln!("Invalid utf-8: {e}");
+                eprintln!("Error openig file: {e}");
                 return 1.into();
             }
-        },
-        Err(e) => {
-            eprintln!("Error openig file: {e}");
-            return 1.into();
-        }
-    };
+        };
+    }
 
-    let prog = match asm_translate(&source) {
+    let prog = match asm_parse(&source) {
         Ok(p) => p,
         Err(e) => {
             eprintln!("Error parsing file: {:?}", e);
@@ -28,13 +31,9 @@ fn main() -> ExitCode {
     };
 
     let mut vm = Lada::init::<STACK_CAP>(prog);
-
     while !vm.halted {
-        print!("{}: {}    \t", vm.ip, vm.program[vm.ip]);
         match vm.exec_inst() {
-            Ok(_) => {
-                vm.stack_print();
-            }
+            Ok(_) => {}
             Err(e) => {
                 eprintln!("ERROR: {:?}, Instruciton: {}", e, vm.program[vm.ip]);
                 eprintln!("{:?}", vm);

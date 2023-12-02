@@ -1,4 +1,7 @@
 // #[allow(dead_code)]
+#[cfg(test)]
+mod tests;
+
 use core::fmt;
 
 #[derive(Debug)]
@@ -31,6 +34,7 @@ pub enum InstType {
     JIF,
     EQ,
     PRINT,
+    DUMP,
     HALT,
 }
 
@@ -177,6 +181,7 @@ impl Lada {
                     }
                     None => return Err(ExecErr::NoOperand)
                 }
+                self.stack_size -= 1;
             }
 
             InstType::EQ => {
@@ -192,14 +197,16 @@ impl Lada {
                     return Err(ExecErr::StackUnderflow)
                 }
                 println!("{}", self.stack[self.stack_size-1]);
-                self.stack_size -= 1;
+            }
+
+            InstType::DUMP => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack_print();
             }
 
             InstType::HALT => self.halted = true
-
-            // _ => {
-                // return Err(ExecErr::IllegalInst);
-            // }
         }
 
         self.ip += 1;
@@ -255,6 +262,9 @@ impl Inst {
     }
     pub fn print() -> Inst {
         Inst { kind: InstType::PRINT, operand: None }
+    }
+    pub fn dump() -> Inst {
+        Inst { kind: InstType::DUMP, operand: None }
     }
     pub fn halt() -> Inst {
         Inst { kind: InstType::HALT, operand: None }
@@ -329,17 +339,36 @@ pub mod file {
         Ok(())
     }
 
-    pub fn asm_translate(source: &str) -> Result<Vec<Inst>, ExecErr> {
+    // will have to change or it will become a piece of spaghetti
+    pub fn asm_parse(source: &str) -> Result<Vec<Inst>, ExecErr> {
         let mut inst_vec: Vec<Inst> = vec![];
-        for line in source.lines() {
+        for mut line in source.lines() {
             let mut inst = "";
             let mut operand = "";
             let mut char_count = 0;
+            let mut comment_count = 0;
+
+            for char in line.chars() {
+                if char == ';' {
+                    for char in line[0..char_count].chars().rev() {
+                        if char != ' ' {
+                            break;
+                        }
+                        comment_count += 1;
+                    }
+                    (line,_) = line.split_at(char_count-comment_count);
+                }
+                char_count += 1
+            }
+
+            if line.len() == 0 {continue}
+            char_count = 0;
 
             for char in line.chars() {
                 if char == ' ' {
                     (inst, operand) = line.split_at(char_count);
                     (_,operand) = operand.split_at(1);
+                    break;
                 }
                 char_count += 1
             }
@@ -350,10 +379,7 @@ pub mod file {
 
             inst_vec.push(
                 match inst {
-                    "nop" => {
-                        Inst::nop()
-                    }
-
+                    "nop" => {Inst::nop()}
                     "push" => {
                         match operand.parse::<isize>() {
                             Ok(op) => {
@@ -366,14 +392,8 @@ pub mod file {
                         }
                     }
 
-                    "pop" => {
-                        Inst::pop()
-                    }
-
-                    "dup" => {
-                        Inst::dup()
-                    }
-
+                    "pop" => {Inst::pop()}
+                    "dup" => {Inst::dup()}
                     "pick" => {
                         match operand.parse::<isize>() {
                             Ok(op) => {
@@ -386,19 +406,10 @@ pub mod file {
                         }
                     }
 
-                    "add" => {
-                        Inst::add()
-                    }
-                    "sub" => {
-                        Inst::sub()
-                    }
-                    "mult" => {
-                        Inst::mult()
-                    }
-                    "div" => {
-                        Inst::div()
-                    }
-
+                    "add" => {Inst::add()}
+                    "sub" => {Inst::sub()}
+                    "mult" => {Inst::mult()}
+                    "div" => {Inst::div()}
                     "jmp" => {
                         match operand.parse::<isize>() {
                             Ok(op) => {
@@ -411,7 +422,7 @@ pub mod file {
                         }
                     }
 
-                    "jmpif" => {
+                    "jmpif" | "jif" => {
                         match operand.parse::<isize>() {
                             Ok(op) => {
                                 Inst::jmpif(op)
@@ -423,18 +434,13 @@ pub mod file {
                         }
                     }
 
-                    "eq" => {
-                        Inst::eq()
-                    }
-                    "print" => {
-                        Inst::print()
-                    }
-                    "halt" => {
-                        Inst::halt()
-                    }
+                    "eq" => {Inst::eq()}
+                    "print" | "." => {Inst::print()}
+                    "dump" => {Inst::dump()}
+                    "halt" => {Inst::halt()}
 
                     &_ => {
-                        eprintln!("Illegal instruction / forgot to include some");
+                        eprintln!("Error: Illegal instruction or I forgot to include some");
                         return Err(ExecErr::IllegalInst);
                     }
                 }
@@ -445,6 +451,3 @@ pub mod file {
         Ok(inst_vec)
     }
 }
-
-#[cfg(test)]
-mod tests;
