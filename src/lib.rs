@@ -18,12 +18,13 @@ pub struct Inst {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InstType {
+    NOP,
     PUSH,
     POP,
     DUP,
     PICK,
-    PLUS,
-    MINUS,
+    ADD,
+    SUB,
     MULT,
     DIV,
     JMP,
@@ -41,6 +42,7 @@ pub enum ExecErr {
     DivByZero,
     NoOperand,
     IllegalAddr,
+    IllegalOperand,
 }
 
 impl Lada {
@@ -62,6 +64,7 @@ impl Lada {
 
         let inst = &self.program[self.ip];
         match inst.kind {
+            InstType::NOP => {}
             InstType::PUSH => {
                 if self.stack_size >= self.stack.len() {
                     return Err(ExecErr::StackOverflow)
@@ -109,7 +112,7 @@ impl Lada {
                 }
             }
 
-            InstType::PLUS => {
+            InstType::ADD => {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
                 }
@@ -117,7 +120,7 @@ impl Lada {
                 self.stack_size -= 1;
             }
 
-            InstType::MINUS => {
+            InstType::SUB => {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
                 }
@@ -226,17 +229,20 @@ impl Inst {
         Inst { kind: InstType::JIF, operand: Some(operand) }
     }
 
+    pub fn nop() -> Inst {
+        Inst { kind: InstType::NOP, operand: None }
+    }
     pub fn pop() -> Inst {
         Inst { kind: InstType::POP, operand: None }
     }
     pub fn dup() -> Inst {
         Inst { kind: InstType::DUP, operand: None }
     }
-    pub fn plus() -> Inst {
-        Inst { kind: InstType::PLUS, operand: None }
+    pub fn add() -> Inst {
+        Inst { kind: InstType::ADD, operand: None }
     }
-    pub fn minus() -> Inst {
-        Inst { kind: InstType::MINUS, operand: None }
+    pub fn sub() -> Inst {
+        Inst { kind: InstType::SUB, operand: None }
     }
     pub fn mult() -> Inst {
         Inst { kind: InstType::MULT, operand: None }
@@ -268,6 +274,18 @@ impl fmt::Display for Inst {
 pub mod file {
     use std::{fs, mem::size_of};
     use super::*;
+
+    pub fn read_prog_from_file(source: &str) -> std::io::Result<Vec<Inst>> {
+        let buff = fs::read(source)?;
+        let len = size_of::<Inst>()/size_of::<u8>();
+        let n = buff.len()/len;
+
+        let prog_slice = &buff[0..n];
+        let prog = unsafe {
+            &*(prog_slice as *const [_] as *const [Inst])
+        };
+        Ok(prog.to_vec())
+    }
 
     pub fn dump_prog_to_file(prog: &mut Vec<Inst>, dest: &str) -> std::io::Result<()> {
         // let _ = std::fs::remove_file(dest);
@@ -311,15 +329,142 @@ pub mod file {
         Ok(())
     }
 
-    pub fn read_prog_from_file(source: &str) -> std::io::Result<Vec<Inst>> {
-        let buff = fs::read(source)?;
-        let len = size_of::<Inst>()/size_of::<u8>();
-        let n = buff.len()/len;
+    pub fn asm_translate(source: &str) -> Result<Vec<Inst>, ExecErr> {
+        let mut inst_vec: Vec<Inst> = vec![];
+        for line in source.lines() {
+            let mut inst = "";
+            let mut operand = "";
+            let mut char_count = 0;
 
-        let prog_slice = &buff[0..n];
-        let prog = unsafe {
-            &*(prog_slice as *const [_] as *const [Inst])
-        };
-        Ok(prog.to_vec())
+            for char in line.chars() {
+                if char == ' ' {
+                    (inst, operand) = line.split_at(char_count);
+                    (_,operand) = operand.split_at(1);
+                }
+                char_count += 1
+            }
+
+            if inst == "" {
+                (inst,_) = line.split_at(line.len());
+            }
+
+            inst_vec.push(
+                match inst {
+                    "nop" => {
+                        Inst::nop()
+                    }
+
+                    "push" => {
+                        match operand.parse::<isize>() {
+                            Ok(op) => {
+                                Inst::push(op)
+                            }
+                            Err(e) => {
+                                eprintln!("Error: {e}");
+                                return Err(ExecErr::IllegalOperand);
+                            }
+                        }
+                    }
+
+                    "pop" => {
+                        Inst::pop()
+                    }
+
+                    "dup" => {
+                        Inst::dup()
+                    }
+
+                    "pick" => {
+                        match operand.parse::<isize>() {
+                            Ok(op) => {
+                                Inst::pick(op)
+                            }
+                            Err(e) => {
+                                eprintln!("Error: {e}");
+                                return Err(ExecErr::IllegalOperand);
+                            }
+                        }
+                    }
+
+                    "add" => {
+                        Inst::add()
+                    }
+                    "sub" => {
+                        Inst::sub()
+                    }
+                    "mult" => {
+                        Inst::mult()
+                    }
+                    "div" => {
+                        Inst::div()
+                    }
+
+                    "jmp" => {
+                        match operand.parse::<isize>() {
+                            Ok(op) => {
+                                Inst::jmp(op)
+                            }
+                            Err(e) => {
+                                eprintln!("Error: {e}");
+                                return Err(ExecErr::IllegalOperand);
+                            }
+                        }
+                    }
+
+                    "jmpif" => {
+                        match operand.parse::<isize>() {
+                            Ok(op) => {
+                                Inst::jmpif(op)
+                            }
+                            Err(e) => {
+                                eprintln!("Error: {e}");
+                                return Err(ExecErr::IllegalOperand);
+                            }
+                        }
+                    }
+
+                    "eq" => {
+                        Inst::eq()
+                    }
+                    "print" => {
+                        Inst::print()
+                    }
+                    "halt" => {
+                        Inst::halt()
+                    }
+
+                    &_ => {
+                        eprintln!("Illegal instruction / forgot to include some");
+                        return Err(ExecErr::IllegalInst);
+                    }
+                }
+            );
+
+        }
+
+        Ok(inst_vec)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_asm_translate() {
+        let source: &str = "push 0\npush 69\ndup\npick 2\nadd\nhalt\njmp 2";
+        let asm_prog = file::asm_translate(source).unwrap();
+        let prog = vec![
+            Inst::push(0),
+            Inst::push(69),
+            Inst::dup(),
+            Inst::pick(2),
+            Inst::add(),
+            Inst::halt(),
+            Inst::jmp(2),
+        ];
+        for i in 0..prog.len() {
+            assert!(prog[i] == asm_prog[i]);
+        }
     }
 }
