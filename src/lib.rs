@@ -1,5 +1,4 @@
 // #[allow(dead_code)]
-
 use core::fmt;
 
 #[derive(Debug)]
@@ -11,13 +10,13 @@ pub struct Lada {
     pub program: Vec<Inst>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Inst {
     kind: InstType,
     operand: Option<isize>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InstType {
     PUSH,
     POP,
@@ -263,5 +262,64 @@ impl fmt::Display for Inst {
             None => write!(f, "{:?}", self.kind)
         }
         
+    }
+}
+
+pub mod file {
+    use std::{fs, mem::size_of};
+    use super::*;
+
+    pub fn dump_prog_to_file(prog: &mut Vec<Inst>, dest: &str) -> std::io::Result<()> {
+        // let _ = std::fs::remove_file(dest);
+        std::fs::File::create(dest)?;
+
+        match fs::OpenOptions::new().write(true).open(dest) {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("Error opening file {e}");
+                return Err(e);
+            }
+        }
+
+        let mut f_buff: Vec<u8> = vec![];
+        let len = size_of::<Inst>()/size_of::<u8>();
+        let n = prog.len();
+
+        for _ in 0..len {
+            prog.push(Inst::halt());
+        }
+        for i in 0..n {
+            let prog_slice = &prog[i..i+len];
+            let buff = unsafe {
+                &*(prog_slice as *const [_] as *const [u8])
+            };
+            for j in 0..len {
+                f_buff.push(buff[j]);
+            }
+        }
+        for _ in 0..len {
+            prog.pop();
+        }
+
+        match fs::write(dest, &f_buff) {
+            Ok(_) => {}
+            Err(e) => {
+                println!("Error writing to a file {dest}: {e}");
+                return Err(e);
+            }
+        };
+        Ok(())
+    }
+
+    pub fn read_prog_from_file(source: &str) -> std::io::Result<Vec<Inst>> {
+        let buff = fs::read(source)?;
+        let len = size_of::<Inst>()/size_of::<u8>();
+        let n = buff.len()/len;
+
+        let prog_slice = &buff[0..n];
+        let prog = unsafe {
+            &*(prog_slice as *const [_] as *const [Inst])
+        };
+        Ok(prog.to_vec())
     }
 }
