@@ -4,11 +4,12 @@ push 1
 dup
 pick 2
 add
+.
 ;condition checking
 dup
 push 17711  ;compared value
 eq
-jmpif 10
+jmpif 11
 jmp 2
 
 dump        ;print stack

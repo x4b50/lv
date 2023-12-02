@@ -8,7 +8,7 @@ use core::fmt;
 pub struct Lada {
     pub halted: bool,
     pub ip: usize,
-    stack: Box<[isize]>,
+    stack: Vec<isize>,
     stack_size: usize,
     pub program: Vec<Inst>,
 }
@@ -50,12 +50,12 @@ pub enum ExecErr {
 }
 
 impl Lada {
-    pub fn init<const STACK_SIZE: usize>(program: Vec<Inst>) -> Lada {
+    pub fn init(program: Vec<Inst>, stack_cap: usize) -> Lada {
         Lada {
             ip: 0,
             halted: false,
             // stack: vec![0;stack_size],
-            stack: Box::new([0;STACK_SIZE]),
+            stack: vec![0;stack_cap],
             stack_size: 0,
             program
         }

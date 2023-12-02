@@ -4,7 +4,7 @@ use lv::file::*;
 fn main() -> ExitCode {
     let args: Vec<_> = std::env::args().collect();
     if args.len() < 3 {
-        eprintln!("Not enough arguments, supply suorce code and output");
+        eprintln!("Not enough arguments:\n./lc <input.lv> <output.lb>");
         return 1.into();
     }
 
