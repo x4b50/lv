@@ -1,0 +1,16 @@
+push 0
+push 1
+;main loop
+dup
+pick 2
+add
+.
+;condition checking
+dup
+push 17711  ;compared value
+eq
+jmpif 11
+jmp 2
+
+dump    ;print stack
+halt

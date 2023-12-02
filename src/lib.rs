@@ -15,8 +15,8 @@ pub struct Lada {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Inst {
-    kind: InstType,
-    operand: Option<isize>,
+    kind: (InstType, bool),
+    operand: isize
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -75,19 +75,14 @@ impl Lada {
         }
 
         let inst = &self.program[self.ip];
-        match inst.kind {
+        match inst.kind.0 {
             InstType::NOP => {}
             InstType::PUSH => {
                 if self.stack_size >= self.stack.len() {
                     return Err(ExecErr::StackOverflow)
                 }
-                match inst.operand {
-                    Some(v) => {
-                        self.stack[self.stack_size] = v;
-                        self.stack_size += 1;
-                    }
-                    None => return Err(ExecErr::NoOperand)
-                }
+                self.stack[self.stack_size] = inst.operand;
+                self.stack_size += 1;
             }
 
             InstType::POP => {
@@ -112,16 +107,11 @@ impl Lada {
                 if self.stack_size >= self.stack.len() {
                     return Err(ExecErr::StackUnderflow)
                 }
-                match inst.operand {
-                    Some(v) => {
-                        if v < 0 || v >= self.stack_size as isize {
-                            return Err(ExecErr::IllegalAddr);
-                        }
-                        self.stack[self.stack_size] = self.stack[self.stack_size -1 -v as usize];
-                        self.stack_size += 1;
-                    }
-                    None => return Err(ExecErr::NoOperand)
+                if inst.operand < 0 || inst.operand >= self.stack_size as isize {
+                    return Err(ExecErr::IllegalAddr);
                 }
+                self.stack[self.stack_size] = self.stack[self.stack_size -1 -inst.operand as usize];
+                self.stack_size += 1;
             }
 
             InstType::ADD => {
@@ -160,34 +150,24 @@ impl Lada {
             }
 
             InstType::JMP => {
-                match inst.operand {
-                    Some(op) => {
-                        if op < 0 {
-                            return Err(ExecErr::IllegalInstAddr);
-                        }
-                        self.ip = op as usize;
-                        return Ok(())
-                    }
-                    None => return Err(ExecErr::NoOperand)
+                if inst.operand < 0 || inst.operand as usize >= self.program.len() {
+                    return Err(ExecErr::IllegalInstAddr);
                 }
+                self.ip = inst.operand as usize;
+                return Ok(())
             }
 
             InstType::JIF => {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
                 }
-                match inst.operand {
-                    Some(op) => {
-                        if op < 0 {
-                            return Err(ExecErr::IllegalInstAddr);
-                        }
-                        if self.stack[self.stack_size-1] != 0 {
-                            self.stack_size -= 1;
-                            self.ip = op as usize;
-                            return Ok(())
-                        }
-                    }
-                    None => return Err(ExecErr::NoOperand)
+                if inst.operand < 0 || inst.operand as usize >= self.program.len() {
+                    return Err(ExecErr::IllegalInstAddr);
+                }
+                if self.stack[self.stack_size-1] != 0 {
+                    self.stack_size -= 1;
+                    self.ip = inst.operand as usize;
+                    return Ok(())
                 }
                 self.stack_size -= 1;
             }
@@ -224,58 +204,59 @@ impl Lada {
 
 impl Inst {
     pub fn push(operand: isize) -> Inst {
-        Inst { kind: InstType::PUSH, operand: Some(operand) }
+        Inst { kind: (InstType::PUSH, true), operand}
     }
     pub fn pick(operand: isize) -> Inst {
-        Inst { kind: InstType::PICK, operand: Some(operand) }
+        Inst { kind: (InstType::PICK, true), operand}
     }
     pub fn jmp(operand: isize) -> Inst {
-        Inst { kind: InstType::JMP, operand: Some(operand) }
+        Inst { kind: (InstType::JMP, true), operand}
     }
     pub fn jmpif(operand: isize) -> Inst {
-        Inst { kind: InstType::JIF, operand: Some(operand) }
+        Inst { kind: (InstType::JIF, true), operand}
     }
 
     pub fn nop() -> Inst {
-        Inst { kind: InstType::NOP, operand: None }
+        Inst { kind: (InstType::NOP, false), operand: 0 }
     }
     pub fn pop() -> Inst {
-        Inst { kind: InstType::POP, operand: None }
+        Inst { kind: (InstType::POP, false), operand: 0 }
     }
     pub fn dup() -> Inst {
-        Inst { kind: InstType::DUP, operand: None }
+        Inst { kind: (InstType::DUP, false), operand: 0 }
     }
     pub fn add() -> Inst {
-        Inst { kind: InstType::ADD, operand: None }
+        Inst { kind: (InstType::ADD, false), operand: 0 }
     }
     pub fn sub() -> Inst {
-        Inst { kind: InstType::SUB, operand: None }
+        Inst { kind: (InstType::SUB, false), operand: 0 }
     }
     pub fn mult() -> Inst {
-        Inst { kind: InstType::MULT, operand: None }
+        Inst { kind: (InstType::MULT, false), operand: 0 }
     }
     pub fn div() -> Inst {
-        Inst { kind: InstType::DIV, operand: None }
+        Inst { kind: (InstType::DIV, false), operand: 0 }
     }
     pub fn eq() -> Inst {
-        Inst { kind: InstType::EQ, operand: None }
+        Inst { kind: (InstType::EQ, false), operand: 0 }
     }
     pub fn print() -> Inst {
-        Inst { kind: InstType::PRINT, operand: None }
+        Inst { kind: (InstType::PRINT, false), operand: 0 }
     }
     pub fn dump() -> Inst {
-        Inst { kind: InstType::DUMP, operand: None }
+        Inst { kind: (InstType::DUMP, false), operand: 0 }
     }
     pub fn halt() -> Inst {
-        Inst { kind: InstType::HALT, operand: None }
+        Inst { kind: (InstType::HALT, false), operand: 0 }
     }
 }
 
 impl fmt::Display for Inst {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.operand {
-            Some(o) => write!(f, "{:?} {}", self.kind, o),
-            None => write!(f, "{:?}", self.kind)
+        if self.kind.1 {
+            write!(f, "{:?} {}", self.kind.0, self.operand)
+        } else {
+            write!(f, "{:?}", self.kind.0)
         }
         
     }
@@ -379,7 +360,7 @@ pub mod file {
 
             inst_vec.push(
                 match inst {
-                    "nop" => {Inst::nop()}
+                    "nop" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::nop()}
                     "push" => {
                         match operand.parse::<isize>() {
                             Ok(op) => {
@@ -392,8 +373,8 @@ pub mod file {
                         }
                     }
 
-                    "pop" => {Inst::pop()}
-                    "dup" => {Inst::dup()}
+                    "pop" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::pop()}
+                    "dup" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::dup()}
                     "pick" => {
                         match operand.parse::<isize>() {
                             Ok(op) => {
@@ -406,10 +387,10 @@ pub mod file {
                         }
                     }
 
-                    "add" => {Inst::add()}
-                    "sub" => {Inst::sub()}
-                    "mult" => {Inst::mult()}
-                    "div" => {Inst::div()}
+                    "add" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::add()}
+                    "sub" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::sub()}
+                    "mult" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::mult()}
+                    "div" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::div()}
                     "jmp" => {
                         match operand.parse::<isize>() {
                             Ok(op) => {
@@ -434,10 +415,10 @@ pub mod file {
                         }
                     }
 
-                    "eq" => {Inst::eq()}
-                    "print" | "." => {Inst::print()}
-                    "dump" => {Inst::dump()}
-                    "halt" => {Inst::halt()}
+                    "eq" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::eq()}
+                    "print" | "." => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::print()}
+                    "dump" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::dump()}
+                    "halt" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::halt()}
 
                     &_ => {
                         eprintln!("Error: Illegal instruction or I forgot to include some");
