@@ -8,7 +8,7 @@ fn main() -> ExitCode {
 
     let args: Vec<_> = std::env::args().collect();
     if args.len() < 2 {
-        eprintln!("Not enough arguments:\n./lv <source.lb>");
+        eprintln!("Not enough arguments:\n./lv <source.lb> optional: <stack capacity> -d (debug)");
         return 1.into();
     }
 

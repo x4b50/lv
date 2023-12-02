@@ -1,5 +1,3 @@
-#[cfg(test)]
-
 #[macro_export]
 macro_rules! prog {
     () => { vec![
@@ -15,6 +13,7 @@ macro_rules! prog {
     };
 }
 
+#[cfg(test)]
 pub mod tests{
     use crate::*;
 

@@ -66,10 +66,14 @@ impl Lada {
 
     pub fn stack_print(&self) {
         print!("[");
-        for i in 0..self.stack_size-1 {
-            print!("{}, ", self.stack[i]);
+        if self.stack_size == 0 {
+            println!("]");
+        } else {
+            for i in 0..self.stack_size-1 {
+                print!("{}, ", self.stack[i]);
+            }
+            println!("{}]", self.stack[self.stack_size-1]);
         }
-        println!("{}]", self.stack[self.stack_size-1]);
     }
 
     pub fn exec_inst(&mut self) -> Result<(), ExecErr> {
@@ -284,6 +288,30 @@ impl Inst {
     }
     pub fn halt() -> Inst {
         Inst { kind: (InstType::HALT, false), operand: 0 }
+    }
+
+
+    pub fn to_string(&self) -> String {
+        match self.kind.0 {
+            InstType::NOP => {"nop\n".to_string()}
+            InstType::PUSH => {format!("push {}\n", self.operand)}
+            InstType::POP => {"pop\n".to_string()}
+            InstType::DUP => {"dup\n".to_string()}
+            InstType::PICK => {format!("pick {}\n", self.operand)}
+            InstType::ADD => {"add\n".to_string()}
+            InstType::SUB => {"sub\n".to_string()}
+            InstType::MULT => {"mult\n".to_string()}
+            InstType::DIV => {"div\n".to_string()}
+            InstType::JMP => {format!("jmp {}\n", self.operand)}
+            InstType::JIF => {format!("jmpif {}\n", self.operand)}
+            InstType::EQ => {"eq\n".to_string()}
+            InstType::NEQ => {"neq\n".to_string()}
+            InstType::LT => {"lt\n".to_string()}
+            InstType::GT => {"gt\n".to_string()}
+            InstType::PRINT => {"print\n".to_string()}
+            InstType::DUMP => {"dump\n".to_string()}
+            InstType::HALT => {"halt\n".to_string()}
+        }
     }
 }
 

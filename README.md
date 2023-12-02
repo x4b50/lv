@@ -10,6 +10,11 @@ cargo build -r
 ./lv code.lb 32 -d
 ```
 
+You can also disassemble the binary.
+```sh
+./ldis code.lb
+```
+
 ## Running examples
 The fibonacci example will cause stack overflow, it is not a bug.
 ```sh
@@ -37,6 +42,9 @@ div     ;divide two values at the top of the stack
 jmp 10  ;jump to instruction numer 10 (0 based)
 jmpif 2 ;or jif - jump to instruction numer 2 if check was true
 eq      ;check if two values at the top are equal and pushes the result on the stack
+neq     ;check if two values are not equal
+gt      ;check if the value below is greater than the one on top
+lt      ;opposite of gt
 print   ;or . - print the value at the top of the stack (doesn't pop it)
 dump    ;prints the entire stack
 halt    ;stops the execution
@@ -48,3 +56,5 @@ TODO:
 - [ ] imlpement jump labels
 - [x] make readme useful
 - [ ] implement the language
+- [x] make a disassembler (easy)
+- might change the executable names
