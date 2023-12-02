@@ -1,18 +1,18 @@
 # LV - Lada Virtual
-A simple single-threaded virtual машина (machine) with a custom language compiler
+A simple stack-based virtual машина (machine) with a custom assembly compiler and no external dependencies.
 
 ## Using the VM
 Compiling the program, running the compiler and the virtual machine with stack size equal 32 (default).
 
-``` bash
+``` sh
 cargo build -r
 ./lc code.lv code.lb
 ./lv code.lb 32
 ```
 
 ## Running examples
-The fibonacci example will cause stack overflow, it is not a bug
-```bash
+The fibonacci example will cause stack overflow, it is not a bug.
+```sh
 cargo build -r
 ./src/examples/fib.sh
 ```

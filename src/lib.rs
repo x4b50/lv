@@ -46,6 +46,7 @@ pub enum ExecErr {
     DivByZero,
     NoOperand,
     IllegalAddr,
+    IllegalInstAddr,
     IllegalOperand,
 }
 
@@ -70,7 +71,7 @@ impl Lada {
 
     pub fn exec_inst(&mut self) -> Result<(), ExecErr> {
         if self.ip >= self.program.len() {
-            return Err(ExecErr::IllegalAddr)
+            return Err(ExecErr::IllegalInstAddr)
         }
 
         let inst = &self.program[self.ip];
@@ -162,7 +163,7 @@ impl Lada {
                 match inst.operand {
                     Some(op) => {
                         if op < 0 {
-                            return Err(ExecErr::IllegalAddr);
+                            return Err(ExecErr::IllegalInstAddr);
                         }
                         self.ip = op as usize;
                         return Ok(())
@@ -178,7 +179,7 @@ impl Lada {
                 match inst.operand {
                     Some(op) => {
                         if op < 0 {
-                            return Err(ExecErr::IllegalAddr);
+                            return Err(ExecErr::IllegalInstAddr);
                         }
                         if self.stack[self.stack_size-1] != 0 {
                             self.stack_size -= 1;

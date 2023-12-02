@@ -1,6 +1,5 @@
 use std::process::ExitCode;
-use lv::{Lada, file::*};
-
+use lv::{Lada, file::*, Inst};
 
 fn main() -> ExitCode {
     let mut stack_cap: usize = 32;
@@ -34,7 +33,12 @@ fn main() -> ExitCode {
         match vm.exec_inst() {
             Ok(_) => {}
             Err(e) => {
-                eprintln!("ERROR: {:?}, Instruciton: {}", e, vm.program[vm.ip]);
+                eprintln!("ERROR: {:?}, Instruciton: {}", e,
+                          if vm.program.len() > vm.ip {
+                              format!("{}", vm.program[vm.ip].clone())
+                          } else {
+                              format!("Expected: {}",Inst::halt())
+                          });
                 eprintln!("{:?}", vm);
                 return 1.into();
             }
