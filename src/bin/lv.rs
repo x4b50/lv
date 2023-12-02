@@ -37,20 +37,21 @@ fn main() -> ExitCode {
     }
 
     let mut vm = Lada::init(prog, stack_cap);
+    let mut ip = 0;
     while !vm.halted {
         match vm.exec_inst() {
             Ok(_) => {if debug {
-                print!("{}: {}    \t", vm.ip-1, vm.program[vm.ip-1]);
+                print!("{}: {}    \t", ip, vm.program[ip]);
                 vm.stack_print();
-            }}
+            }ip = vm.ip}
             Err(e) => {
+                if debug {eprintln!("{:?}", vm)}
                 eprintln!("ERROR: {:?}, Instruciton: {}", e,
                           if vm.program.len() > vm.ip {
                               format!("{}", vm.program[vm.ip].clone())
                           } else {
                               format!("Expected: {}",Inst::halt())
                           });
-                eprintln!("{:?}", vm);
                 return 1.into();
             }
         }

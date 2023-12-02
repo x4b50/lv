@@ -16,6 +16,7 @@ The fibonacci example will cause stack overflow, it is not a bug.
 cargo build -r
 ./src/examples/fib.sh
 ```
+
 For an example of how to use conditions run fib_term example.
 ```sh
 cargo build -r

@@ -33,6 +33,9 @@ pub enum InstType {
     JMP,
     JIF,
     EQ,
+    NEQ,
+    LT,
+    GT,
     PRINT,
     DUMP,
     HALT,
@@ -180,6 +183,30 @@ impl Lada {
                 self.stack_size -= 1;
             }
 
+            InstType::NEQ => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-2] = (self.stack[self.stack_size-1] != self.stack[self.stack_size-2]) as isize;
+                self.stack_size -= 1;
+            }
+
+            InstType::LT => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-2] = (self.stack[self.stack_size-1] < self.stack[self.stack_size-2]) as isize;
+                self.stack_size -= 1;
+            }
+
+            InstType::GT => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-2] = (self.stack[self.stack_size-1] > self.stack[self.stack_size-2]) as isize;
+                self.stack_size -= 1;
+            }
+
             InstType::PRINT => {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
@@ -239,6 +266,15 @@ impl Inst {
     }
     pub fn eq() -> Inst {
         Inst { kind: (InstType::EQ, false), operand: 0 }
+    }
+    pub fn neq() -> Inst {
+        Inst { kind: (InstType::NEQ, false), operand: 0 }
+    }
+    pub fn lt() -> Inst {
+        Inst { kind: (InstType::LT, false), operand: 0 }
+    }
+    pub fn gt() -> Inst {
+        Inst { kind: (InstType::GT, false), operand: 0 }
     }
     pub fn print() -> Inst {
         Inst { kind: (InstType::PRINT, false), operand: 0 }
@@ -416,6 +452,9 @@ pub mod file {
                     }
 
                     "eq" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::eq()}
+                    "neq" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::neq()}
+                    "lt" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::lt()}
+                    "gt" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::gt()}
                     "print" | "." => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::print()}
                     "dump" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::dump()}
                     "halt" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::halt()}

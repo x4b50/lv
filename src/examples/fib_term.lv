@@ -7,10 +7,10 @@ add
 .
 ;condition checking
 dup
-push 17711  ;compared value
-eq
-jmpif 11
-jmp 2
+push 250000  ;compared value
+gt
+jmpif 2
 
+pop     ;to remove greater value
 dump    ;print stack
 halt
