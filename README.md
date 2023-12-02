@@ -1,7 +1,7 @@
 # LV - Lada Virtual
 A simple single-threaded virtual машина (machine) with a custom language compiler
 
-== Using the VM ==
+## Using the VM
 Compiling the program, running the compiler and the virtual machine with stack size equal 32.
 
 ``` sh
@@ -10,7 +10,7 @@ cargo build -r
 ./lv code.lb 32
 ```
 
-== Writing programs ==
+## Writing programs
 ``` nasm
 nop     ;no op
 push 7  ;push 7 on the stack
