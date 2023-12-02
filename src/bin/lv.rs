@@ -1,8 +1,7 @@
-use std::{process::ExitCode, fs};
+use std::process::ExitCode;
 use lv::{Lada, file::*};
 
 const STACK_CAP: usize = 25;
-// const SOURCE: &str = "code.lv";
 
 fn main() -> ExitCode {
     let args: Vec<_> = std::env::args().collect();
@@ -11,21 +10,11 @@ fn main() -> ExitCode {
         return 1.into();
     }
 
-    let mut source: String = args[1].clone();
-    {
-        source = match fs::read_to_string(source) {
-            Ok(f) => {f}
-            Err(e) => {
-                eprintln!("Error openig file: {e}");
-                return 1.into();
-            }
-        };
-    }
-
-    let prog = match asm_parse(&source) {
-        Ok(p) => p,
+    let source: String = args[1].clone();
+    let prog = match read_prog_from_file(&source) {
+        Ok(p) => {p}
         Err(e) => {
-            eprintln!("Error parsing file: {:?}", e);
+            eprint!("Error while reading {source}: {e}");
             return 1.into();
         }
     };
