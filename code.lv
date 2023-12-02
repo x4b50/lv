@@ -4,7 +4,7 @@ push 1
 dup
 pick 2
 add
-    ; condition checking
+;condition checking
 dup
 push 17711  ;compared value
 eq
