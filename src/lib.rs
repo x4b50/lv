@@ -183,7 +183,7 @@ impl Lada {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
                 }
-                self.stack[self.stack_size-2] = (self.stack[self.stack_size-1] == self.stack[self.stack_size-2]) as isize;
+                self.stack[self.stack_size-2] = (self.stack[self.stack_size-2] == self.stack[self.stack_size-1]) as isize;
                 self.stack_size -= 1;
             }
 
@@ -191,7 +191,7 @@ impl Lada {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
                 }
-                self.stack[self.stack_size-2] = (self.stack[self.stack_size-1] != self.stack[self.stack_size-2]) as isize;
+                self.stack[self.stack_size-2] = (self.stack[self.stack_size-2] != self.stack[self.stack_size-1]) as isize;
                 self.stack_size -= 1;
             }
 
@@ -199,7 +199,7 @@ impl Lada {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
                 }
-                self.stack[self.stack_size-2] = (self.stack[self.stack_size-1] < self.stack[self.stack_size-2]) as isize;
+                self.stack[self.stack_size-2] = (self.stack[self.stack_size-2] < self.stack[self.stack_size-1]) as isize;
                 self.stack_size -= 1;
             }
 
@@ -207,7 +207,7 @@ impl Lada {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
                 }
-                self.stack[self.stack_size-2] = (self.stack[self.stack_size-1] > self.stack[self.stack_size-2]) as isize;
+                self.stack[self.stack_size-2] = (self.stack[self.stack_size-2] > self.stack[self.stack_size-1]) as isize;
                 self.stack_size -= 1;
             }
 
@@ -415,7 +415,7 @@ pub mod file {
                 }
                 char_count += 1
             }
-            
+
             char_count = 0;
             for char in line.chars() {
                 if char == ':' {
@@ -429,10 +429,19 @@ pub mod file {
                         name: line[char_count-label_count..char_count].to_string(),
                         addr: inst_vec.len()
                     });
-                    (line,_) = line.split_at(char_count-label_count);
+                    (_,line) = line.split_at(char_count+1);
                     break;
                 }
                 char_count += 1
+            }
+            
+            char_count = 0;
+            for char in line.chars() {
+                if char != ' ' {
+                    (_,line) = line.split_at(char_count);
+                    break;
+                }
+                char_count += 1;
             }
 
             if line.len() == 0 {continue}
@@ -445,7 +454,6 @@ pub mod file {
                 }
                 char_count += 1
             }
-
             if inst == "" {
                 (inst,_) = line.split_at(line.len());
             }
@@ -502,7 +510,7 @@ pub mod file {
                             }
                             Err(_) => {
                                 jmp_vec.push(&operand);
-                                Inst::jmp(-1)
+                                Inst::jmpif(-1)
                             }
                         }
                     }

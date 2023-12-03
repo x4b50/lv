@@ -9,8 +9,8 @@ add
 ;condition checking
 dup
 push 250000  ;compared value
-gt
-jmpif loop
+lt
+jif loop
 
 pop     ;to remove greater value
 dump    ;print stack

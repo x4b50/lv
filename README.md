@@ -61,4 +61,5 @@ TODO:
 - [ ] add compile time value definitions
 - [ ] add heap w/ pointers on the stack
 - [ ] implement the language
+- [ ] add comments in some places
 - might change the executable names

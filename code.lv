@@ -12,6 +12,5 @@ div
 dup
 jmp label
 print   ;will not be executed
-label:
-dump    ;print stack
+label: dump    ;print stack
 halt
