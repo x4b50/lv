@@ -41,7 +41,7 @@ fn main() -> ExitCode {
     while !vm.halted {
         match vm.exec_inst() {
             Ok(_) => {if debug {
-                print!("{}: {}    \t", ip, vm.program[ip]);
+                print!("Inst: {}: {}", ip, vm.program[ip]);
                 vm.stack_print();
             }ip = vm.ip}
             Err(e) => {

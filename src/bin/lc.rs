@@ -19,8 +19,8 @@ fn main() -> ExitCode {
 
     let mut prog = match asm_parse(&source) {
         Ok(p) => p,
-        Err(e) => {
-            eprintln!("Error parsing file: {:?}", e);
+        Err((e,n)) => {
+            eprintln!("Error on line {}: {:?}", n, e);
             return 1.into();
         }
     };

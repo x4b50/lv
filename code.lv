@@ -1,16 +1,29 @@
+$const 3
+
 push 0
-push 1
-mult
-push 5
+jmp first
+th:
+push $const
 sub
-dup
-push 15
-add
-push 2
-;first value is devided by the second
-div
-dup
-jmp label
-print   ;will not be executed
-label: dump    ;print stack
+jmp four
+; if it gets parsed correctly then wow
+
+sec:
+    push 2
+    dup
+    .
+    jmp th
+
+four:
+push 4
+jmp first
+; some comment
+
+first: push 1
+gt
+jmpif halt
+jmp sec
+
+halt:
+dump
 halt

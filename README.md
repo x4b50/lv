@@ -43,7 +43,7 @@ div         ;divide two values at the top of the stack
 jmp 10      ;jump to instruction numer 10 (0 based)
 jmpif 2     ;or jif - jump to instruction numer 2 if check was true
 jmp start   ;jmp to 'start' label
-eq          ;check if two values at the top are equal and pushes the result on the stack
+eq          ;check if two values at the top are equal substitutes them with the result
 neq         ;check if two values are not equal
 gt          ;check if the value below is greater than the one on top
 lt          ;opposite of gt
@@ -58,8 +58,11 @@ TODO:
 - [x] imlpement jump labels
 - [x] make readme useful
 - [x] make a disassembler (easy)
-- [ ] add compile time value definitions
+- [x] add compile time value definitions
+- [x] make compiler errors give line, not instruction, numbers
 - [ ] add heap w/ pointers on the stack
 - [ ] implement the language
 - [ ] add comments in some places
+- [ ] use from_bites for vector conversion
+- [ ] (technical regarding implementation) use f64::from_bites and the like, keep track of changes in implementation in respect to std::mem::trasmute
 - might change the executable names
