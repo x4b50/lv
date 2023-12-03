@@ -1,9 +1,10 @@
 push 0
 push 1
 ;main loop
+loop:
 dup
 pick 2
 add
 .   ;print top value
-jmp 2
+jmp loop
 halt

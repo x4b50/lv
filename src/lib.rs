@@ -112,7 +112,7 @@ impl Lada {
 
             InstType::PICK => {
                 if self.stack_size >= self.stack.len() {
-                    return Err(ExecErr::StackUnderflow)
+                    return Err(ExecErr::StackOverflow)
                 }
                 if inst.operand < 0 || inst.operand >= self.stack_size as isize {
                     return Err(ExecErr::IllegalAddr);
@@ -293,24 +293,24 @@ impl Inst {
 
     pub fn to_string(&self) -> String {
         match self.kind.0 {
-            InstType::NOP => {"nop\n".to_string()}
-            InstType::PUSH => {format!("push {}\n", self.operand)}
-            InstType::POP => {"pop\n".to_string()}
-            InstType::DUP => {"dup\n".to_string()}
-            InstType::PICK => {format!("pick {}\n", self.operand)}
-            InstType::ADD => {"add\n".to_string()}
-            InstType::SUB => {"sub\n".to_string()}
-            InstType::MULT => {"mult\n".to_string()}
-            InstType::DIV => {"div\n".to_string()}
-            InstType::JMP => {format!("jmp {}\n", self.operand)}
-            InstType::JIF => {format!("jmpif {}\n", self.operand)}
-            InstType::EQ => {"eq\n".to_string()}
-            InstType::NEQ => {"neq\n".to_string()}
-            InstType::LT => {"lt\n".to_string()}
-            InstType::GT => {"gt\n".to_string()}
-            InstType::PRINT => {"print\n".to_string()}
-            InstType::DUMP => {"dump\n".to_string()}
-            InstType::HALT => {"halt\n".to_string()}
+            InstType::NOP   => {format!("nop\n")}
+            InstType::PUSH  => {format!("push {}\n", self.operand)}
+            InstType::POP   => {format!("pop\n")}
+            InstType::DUP   => {format!("dup\n")}
+            InstType::PICK  => {format!("pick {}\n", self.operand)}
+            InstType::ADD   => {format!("add\n")}
+            InstType::SUB   => {format!("sub\n")}
+            InstType::MULT  => {format!("mult\n")}
+            InstType::DIV   => {format!("div\n")}
+            InstType::JMP   => {format!("jmp {}\n", self.operand)}
+            InstType::JIF   => {format!("jmpif {}\n", self.operand)}
+            InstType::EQ    => {format!("eq\n")}
+            InstType::NEQ   => {format!("neq\n")}
+            InstType::LT    => {format!("lt\n")}
+            InstType::GT    => {format!("gt\n")}
+            InstType::PRINT => {format!("print\n")}
+            InstType::DUMP  => {format!("dump\n")}
+            InstType::HALT  => {format!("halt\n")}
         }
     }
 }
@@ -384,14 +384,23 @@ pub mod file {
         Ok(())
     }
 
+    #[derive(Debug)]
+    struct Label {
+        name: String,
+        addr: usize
+    }
+
     // will have to change or it will become a piece of spaghetti
     pub fn asm_parse(source: &str) -> Result<Vec<Inst>, ExecErr> {
         let mut inst_vec: Vec<Inst> = vec![];
+        let mut label_vec: Vec<Label> = vec![];
+        let mut jmp_vec: Vec<&str> = vec![];
         for mut line in source.lines() {
             let mut inst = "";
             let mut operand = "";
             let mut char_count = 0;
             let mut comment_count = 0;
+            let mut label_count = 0;
 
             for char in line.chars() {
                 if char == ';' {
@@ -402,13 +411,32 @@ pub mod file {
                         comment_count += 1;
                     }
                     (line,_) = line.split_at(char_count-comment_count);
+                    break;
+                }
+                char_count += 1
+            }
+            
+            char_count = 0;
+            for char in line.chars() {
+                if char == ':' {
+                    for char in line[0..char_count].chars().rev() {
+                        if !char.is_alphabetic() {
+                            break;
+                        }
+                        label_count += 1;
+                    }
+                    label_vec.push(Label {
+                        name: line[char_count-label_count..char_count].to_string(),
+                        addr: inst_vec.len()
+                    });
+                    (line,_) = line.split_at(char_count-label_count);
+                    break;
                 }
                 char_count += 1
             }
 
             if line.len() == 0 {continue}
             char_count = 0;
-
             for char in line.chars() {
                 if char == ' ' {
                     (inst, operand) = line.split_at(char_count);
@@ -460,9 +488,9 @@ pub mod file {
                             Ok(op) => {
                                 Inst::jmp(op)
                             }
-                            Err(e) => {
-                                eprintln!("Error: {e}");
-                                return Err(ExecErr::IllegalOperand);
+                            Err(_) => {
+                                jmp_vec.push(&operand);
+                                Inst::jmp(-1)
                             }
                         }
                     }
@@ -472,9 +500,9 @@ pub mod file {
                             Ok(op) => {
                                 Inst::jmpif(op)
                             }
-                            Err(e) => {
-                                eprintln!("Error: {e}");
-                                return Err(ExecErr::IllegalOperand);
+                            Err(_) => {
+                                jmp_vec.push(&operand);
+                                Inst::jmp(-1)
                             }
                         }
                     }
@@ -488,14 +516,37 @@ pub mod file {
                     "halt" => {if operand != "" {return Err(ExecErr::IllegalOperand);} Inst::halt()}
 
                     &_ => {
-                        eprintln!("Error: Illegal instruction or I forgot to include some");
+                        eprintln!("Error: Illegal instruction number: {} or I forgot to include some", inst_vec.len());
                         return Err(ExecErr::IllegalInst);
                     }
                 }
             );
+        }
 
+        let mut jmp = 0;
+        for i in 0..inst_vec.len() {
+            if inst_vec[i].kind.0 == InstType::JMP || inst_vec[i].kind.0 == InstType::JIF {
+                if inst_vec[i].operand < 0 {
+                    let mut op = 0;
+                    for j in 0..label_vec.len() {
+                        if label_vec[j].name == jmp_vec[jmp] {
+                            op = label_vec[j].addr;
+                        }
+                    }
+                    inst_vec[i].operand = op as isize;
+                    jmp += 1;
+                }
+            }
         }
 
         Ok(inst_vec)
     }
 }
+
+/*
+// https://stackoverflow.com/questions/27859822/is-it-possible-to-have-stack-allocated-arrays-with-the-size-determined-at-runtim
+enum StackVec<T, const N: usize> {
+    Inline(usize, [T; N]),
+    Dynamic(Vec<T>),
+}
+// */

@@ -10,7 +10,8 @@ push 2
 ;first value is devided by the second
 div
 dup
-jmp 13
+jmp label
 print   ;will not be executed
+label:
 dump    ;print stack
 halt
