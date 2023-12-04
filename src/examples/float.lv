@@ -1,0 +1,14 @@
+push 6.9
+.
+push 4.2
+multf
+push 21.37
+addf
+push 6.66
+subf
+push 0.
+divf
+push 4
+push 4.
+dump
+halt

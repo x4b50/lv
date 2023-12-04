@@ -28,6 +28,12 @@ cargo build -r
 ./src/examples/fib_term.sh
 ```
 
+Example of how to use different floating point operations and debug flag.
+```sh
+cargo build -r
+./src/examples/float.sh
+```
+
 ## Writing programs
 ``` nasm
 start:      ;create a label
@@ -47,7 +53,10 @@ eq          ;check if two values at the top are equal substitutes them with the 
 neq         ;check if two values are not equal
 gt          ;check if the value below is greater than the one on top
 lt          ;opposite of gt
+empty       ;empties the stack
+ifempty     ;if stack is empty pushes true, false if not
 print       ;or . - print the value at the top of the stack (doesn't pop it)
+shout       ;prints and pops
 dump        ;prints the entire stack
 halt        ;stops the execution
 ```
@@ -60,9 +69,14 @@ TODO:
 - [x] make a disassembler (easy)
 - [x] add compile time value definitions
 - [x] make compiler errors give line, not instruction, numbers
+- [x] make floats work
+- [ ] add access functions of vm instead of pub
 - [ ] add heap w/ pointers on the stack
-- [ ] implement the language
 - [ ] add comments in some places
+- [x] compiler might not give errors on pushing not defined constants/labels
+- [ ] make two type of instruction struct to save space on unused operands (indicate if contains operand to make file parsing possible)
 - [ ] use from_bites for vector conversion
 - [ ] (technical regarding implementation) use f64::from_bites and the like, keep track of changes in implementation in respect to std::mem::trasmute
+- [ ] some refactoring regarding instruction storage/parsing https://www.youtube.com/watch?v=LN9vrbBNG64 ~1:50:00
+- [ ] implement the language
 - might change the executable names

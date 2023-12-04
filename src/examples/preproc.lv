@@ -1,0 +1,21 @@
+; floating point
+$threshold 100.0
+$float 4.2
+; integer
+$int 14
+
+start:
+push $int
+push $float
+label:
+    push $float
+    multf
+    pick 1
+    push 1
+    sub
+    shout
+    dup
+    push $threshold
+    ltf
+    jmpif label
+    halt
