@@ -55,12 +55,12 @@ add         ;add two values at the top of the stack
 sub         ;subtract two values at the top of the stack
 mult        ;multiply two values at the top of the stack
 div         ;divide two values at the top of the stack
-shl	        ;perform shift left on second top value, top of stack, amount of times
-shr			;perform shift right
-and			;perform bitwise and on two top values
-or			;perform bitwise or on two top values
-xor			;perform bitwise xor on two top values
-not			;perform bitwise not on two top values
+shl         ;perform shift left on second top value, top of stack, amount of times
+shr         ;perform shift right
+and         ;perform bitwise and on two top values
+or          ;perform bitwise or on two top values
+xor         ;perform bitwise xor on two top values
+not         ;perform bitwise not on two top values
 jmp 10      ;jump to instruction numer 10 (0 based)
 jmpif 2     ;or jif - jump to instruction numer 2 if check was true
 jmp start   ;jmp to 'start' label
