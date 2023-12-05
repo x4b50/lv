@@ -55,7 +55,7 @@ add         ;add two values at the top of the stack
 sub         ;subtract two values at the top of the stack
 mult        ;multiply two values at the top of the stack
 div         ;divide two values at the top of the stack
-shl			;perform shift left on second top value, top of stack, amount of times
+shl	        ;perform shift left on second top value, top of stack, amount of times
 shr			;perform shift right
 and			;perform bitwise and on two top values
 or			;perform bitwise or on two top values
