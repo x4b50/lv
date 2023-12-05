@@ -1,5 +1,5 @@
 use std::process::ExitCode;
-use lv::{Lada, file::*, Inst, PrintType};
+use lv::{Lada, file::*, Inst, InstType, PrintType};
 
 fn main() -> ExitCode {
     let prog;
@@ -26,7 +26,7 @@ fn main() -> ExitCode {
         for i in 2..args.len() {
             if args[i] == "-d" {debug=true}
             else if args[i] == "-f" {print_type = PrintType::F64}
-            else if args[i] == "-p" {print_type = PrintType::PTR}
+            else if args[i] == "-h" {print_type = PrintType::HEX}
             else {
                 stack_cap = match args[i].parse::<usize>() {
                     Ok(v) => v,
@@ -53,7 +53,7 @@ fn main() -> ExitCode {
                           if vm.program.len() > vm.ip {
                               format!("{}", vm.program[vm.ip].clone())
                           } else {
-                              format!("Expected: {}",Inst::halt())
+                              format!("Expected: {}", lv::inst!(HALT))
                           });
                 return 1.into();
             }

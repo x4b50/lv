@@ -23,6 +23,21 @@ macro_rules! f64_bool {
     };
 }
 
+pub mod inst_macro {
+    #[macro_export]
+    macro_rules! inst {
+        ($type:ident) => {
+            Inst { kind: (InstType::$type, false), operand: 0}
+        };
+    }
+    #[macro_export]
+    macro_rules! inst_op {
+        ($type:ident, $op:expr) => {
+            Inst { kind: (InstType::$type, true), operand: $op}
+        };
+    }
+}
+
 #[derive(Debug)]
 pub struct Lada {
     pub halted: bool,
@@ -34,8 +49,8 @@ pub struct Lada {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Inst {
-    kind: (InstType, bool),
-    operand: isize
+    pub kind: (InstType, bool),
+    pub operand: isize
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -97,7 +112,7 @@ pub enum ExecErr {
 pub enum PrintType {
     I64,
     F64,
-    PTR
+    HEX
 }
 
 impl Lada {
@@ -110,6 +125,7 @@ impl Lada {
             program
         }
     }
+
     pub fn stack_print(&self, t: &PrintType) {
         print!("[");
         if self.stack_size == 0 {
@@ -126,10 +142,10 @@ impl Lada {
                         print!("{:.7e}, ",  transmute::<isize, f64>(self.stack[i]));
                     }   println!("{:.7e}]", transmute::<isize, f64>(self.stack[self.stack_size-1]));
                 }}
-                PrintType::PTR => {
+                PrintType::HEX => {
                     for i in 0..self.stack_size-1 {
-                        print!("{:x}, ", self.stack[i]);
-                    }   println!("{:x}]", self.stack[self.stack_size-1]);
+                        print!("{:X}, ", self.stack[i]);
+                    }   println!("{:X}]", self.stack[self.stack_size-1]);
                 }
             }
         }
@@ -388,7 +404,7 @@ impl Lada {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
                 }
-                unsafe { println!("{i} | {i:x} | {f:.7e}", i=self.stack[self.stack_size-1], f=transmute::<isize, f64>(self.stack[self.stack_size-1])); }
+                unsafe { println!("{i} | {i:X} | {f:.7e}", i=self.stack[self.stack_size-1], f=transmute::<isize, f64>(self.stack[self.stack_size-1])); }
             }
 
             InstType::SHOUT => {
@@ -428,155 +444,14 @@ impl Lada {
 }
 
 impl Inst {
-    pub fn push(operand: isize) -> Inst {
-        Inst { kind: (InstType::PUSH, true), operand}
-    }
-    pub fn jmp(operand: isize) -> Inst {
-        Inst { kind: (InstType::JMP, true), operand}
-    }
-    pub fn jmpif(operand: isize) -> Inst {
-        Inst { kind: (InstType::JIF, true), operand}
-    }
-
-    pub fn nop() -> Inst {
-        Inst { kind: (InstType::NOP, false), operand: 0 }
-    }
-    pub fn pop() -> Inst {
-        Inst { kind: (InstType::POP, false), operand: 0 }
-    }
-    pub fn dup() -> Inst {
-        Inst { kind: (InstType::DUP, false), operand: 0 }
-    }
-    pub fn pick() -> Inst {
-        Inst { kind: (InstType::PICK, false), operand: 0}
-    }
-    pub fn shove() -> Inst {
-        Inst { kind: (InstType::SHOVE, false), operand: 0}
-    }
-    pub fn add() -> Inst {
-        Inst { kind: (InstType::ADD, false), operand: 0 }
-    }
-    pub fn sub() -> Inst {
-        Inst { kind: (InstType::SUB, false), operand: 0 }
-    }
-    pub fn mult() -> Inst {
-        Inst { kind: (InstType::MULT, false), operand: 0 }
-    }
-    pub fn div() -> Inst {
-        Inst { kind: (InstType::DIV, false), operand: 0 }
-    }
-    pub fn addf() -> Inst {
-        Inst { kind: (InstType::ADDF, false), operand: 0 }
-    }
-    pub fn subf() -> Inst {
-        Inst { kind: (InstType::SUBF, false), operand: 0 }
-    }
-    pub fn multf() -> Inst {
-        Inst { kind: (InstType::MULTF, false), operand: 0 }
-    }
-    pub fn divf() -> Inst {
-        Inst { kind: (InstType::DIVF, false), operand: 0 }
-    }
-    pub fn shl() -> Inst {
-		Inst { kind: (InstType::SHL, false), operand: 0 }
-	}
-    pub fn shr() -> Inst {
-		Inst { kind: (InstType::SHR, false), operand: 0 }
-	}
-    pub fn and() -> Inst {
-		Inst { kind: (InstType::AND, false), operand: 0 }
-	}
-    pub fn or() -> Inst {
-		Inst { kind: (InstType::OR, false), operand: 0 }
-	}
-    pub fn xor() -> Inst {
-		Inst { kind: (InstType::XOR, false), operand: 0 }
-	}
-    pub fn not() -> Inst {
-		Inst { kind: (InstType::NOT, false), operand: 0 }
-	}
-    pub fn eq() -> Inst {
-        Inst { kind: (InstType::EQ, false), operand: 0 }
-    }
-    pub fn neq() -> Inst {
-        Inst { kind: (InstType::NEQ, false), operand: 0 }
-    }
-    pub fn lt() -> Inst {
-        Inst { kind: (InstType::LT, false), operand: 0 }
-    }
-    pub fn gt() -> Inst {
-        Inst { kind: (InstType::GT, false), operand: 0 }
-    }
-    pub fn eqf() -> Inst {
-        Inst { kind: (InstType::EQF, false), operand: 0 }
-    }
-    pub fn neqf() -> Inst {
-        Inst { kind: (InstType::NEQF, false), operand: 0 }
-    }
-    pub fn ltf() -> Inst {
-        Inst { kind: (InstType::LTF, false), operand: 0 }
-    }
-    pub fn gtf() -> Inst {
-        Inst { kind: (InstType::GTF, false), operand: 0 }
-    }
-    pub fn print() -> Inst {
-        Inst { kind: (InstType::PRINT, false), operand: 0 }
-    }
-    pub fn shout() -> Inst {
-        Inst { kind: (InstType::SHOUT, false), operand: 0 }
-    }
-    pub fn dump() -> Inst {
-        Inst { kind: (InstType::DUMP, false), operand: 0 }
-    }
-    pub fn empty() -> Inst {
-        Inst { kind: (InstType::EMPTY, false), operand: 0 }
-    }
-    pub fn ifempty() -> Inst {
-        Inst { kind: (InstType::IFEMPTY, false), operand: 0 }
-    }
-    pub fn halt() -> Inst {
-        Inst { kind: (InstType::HALT, false), operand: 0 }
-    }
-
-
     pub fn to_string(&self) -> String {
-        match self.kind.0 {
-            InstType::NOP   => {format!("nop\n")}
-            InstType::PUSH  => {format!("push {}\n", self.operand)}
-            InstType::POP   => {format!("pop\n")}
-            InstType::DUP   => {format!("dup\n")}
-            InstType::PICK  => {format!("pick\n")}
-            InstType::SHOVE => {format!("shove\n")}
-            InstType::ADD   => {format!("add\n")}
-            InstType::SUB   => {format!("sub\n")}
-            InstType::MULT  => {format!("mult\n")}
-            InstType::DIV   => {format!("div\n")}
-            InstType::ADDF  => {format!("addf\n")}
-            InstType::SUBF  => {format!("subf\n")}
-            InstType::MULTF => {format!("multf\n")}
-            InstType::DIVF  => {format!("divf\n")}
-            InstType::SHL	=> {format!("shl\n")}
-            InstType::SHR	=> {format!("shr\n")}
-            InstType::AND	=> {format!("and\n")}
-            InstType::OR	=> {format!("or\n")}
-            InstType::XOR	=> {format!("xor\n")}
-            InstType::NOT	=> {format!("not\n")}
-            InstType::JMP   => {format!("jmp {}\n", self.operand)}
-            InstType::JIF   => {format!("jmpif {}\n", self.operand)}
-            InstType::EQ    => {format!("eq\n")}
-            InstType::NEQ   => {format!("neq\n")}
-            InstType::LT    => {format!("lt\n")}
-            InstType::GT    => {format!("gt\n")}
-            InstType::EQF   => {format!("eqf\n")}
-            InstType::NEQF  => {format!("neqf\n")}
-            InstType::LTF   => {format!("ltf\n")}
-            InstType::GTF   => {format!("gtf\n")}
-            InstType::PRINT => {format!("print\n")}
-            InstType::SHOUT => {format!("shout\n")}
-            InstType::DUMP  => {format!("dump\n")}
-            InstType::EMPTY => {format!("empty\n")}
-            InstType::IFEMPTY=>{format!("ifempty\n")}
-            InstType::HALT  => {format!("halt\n")}
+        if self.kind.1 {
+            let str = format!("{}", self);
+            let (inst, op) = str.split_at(format!("{}", self).find(' ').unwrap());
+            let inst = inst.to_lowercase();
+            format!("{inst}{op}\n")
+        } else {
+            format!("{}\n", format!("{}", self).to_lowercase())
         }
     }
 }
@@ -588,7 +463,6 @@ impl fmt::Display for Inst {
         } else {
             write!(f, "{:?}", self.kind.0)
         }
-        
     }
 }
 
@@ -629,7 +503,7 @@ pub mod file {
         let n = prog.len();
 
         for _ in 0..len {
-            prog.push(Inst::halt());
+            prog.push(inst!(HALT));
         }
         for i in 0..n {
             let prog_slice = &prog[i..i+len];
@@ -769,16 +643,16 @@ pub mod file {
 
             inst_vec.push(
                 match inst {
-                    "nop" => {no_op_err!(operand, line_count); Inst::nop()}
+                    "nop" => {no_op_err!(operand, line_count); inst!(NOP)}
                     "push" => {
                         match operand.parse::<isize>() {
                             Ok(op) => {
-                                Inst::push(op)
+                                inst_op!(PUSH, op)
                             }
                             Err(_) => {
                                 match operand.parse::<f64>() {
                                     Ok(op) => {
-                                        Inst::push(unsafe { transmute::<f64, isize>(op)})
+                                        inst_op!(PUSH, (unsafe { transmute::<f64, isize>(op)}))
                                     }
                                     Err(_) => {
                                         sub_vec.push(&operand);
@@ -792,32 +666,32 @@ pub mod file {
                         }
                     }
 
-                    "pop" => {no_op_err!(operand, line_count); Inst::pop()}
-                    "dup" => {no_op_err!(operand, line_count); Inst::dup()}
-                    "pick"=> {no_op_err!(operand, line_count); Inst::pick()}
-                    "shove"=>{no_op_err!(operand, line_count); Inst::shove()}
-                    "add" | "+" => {no_op_err!(operand, line_count); Inst::add()}
-                    "sub" | "-" => {no_op_err!(operand, line_count); Inst::sub()}
-                    "mult"| "*" => {no_op_err!(operand, line_count); Inst::mult()}
-                    "div" | "/" => {no_op_err!(operand, line_count); Inst::div()}
-                    "addf" | "+f" => {no_op_err!(operand, line_count); Inst::addf()}
-                    "subf" | "-f" => {no_op_err!(operand, line_count); Inst::subf()}
-                    "multf"| "*f" => {no_op_err!(operand, line_count); Inst::multf()}
-                    "divf" | "/f" => {no_op_err!(operand, line_count); Inst::divf()}
-    				"shl" | "<<" => {no_op_err!(operand, line_count); Inst::shl()}
-    				"shr" | ">>" => {no_op_err!(operand, line_count); Inst::shr()}
-    				"and" | "&" => {no_op_err!(operand, line_count); Inst::and()}
-    				"or"  | "|" => {no_op_err!(operand, line_count); Inst::or()}
-    				"xor" | "^" => {no_op_err!(operand, line_count); Inst::xor()}
-    				"not" | "!" => {no_op_err!(operand, line_count); Inst::not()}
+                    "pop" => {no_op_err!(operand, line_count); inst!(POP)}
+                    "dup" => {no_op_err!(operand, line_count); inst!(DUP)}
+                    "pick"=> {no_op_err!(operand, line_count); inst!(PICK)}
+                    "shove"=>{no_op_err!(operand, line_count); inst!(SHOVE)}
+                    "add" | "+" => {no_op_err!(operand, line_count); inst!(ADD)}
+                    "sub" | "-" => {no_op_err!(operand, line_count); inst!(SUB)}
+                    "mult"| "*" => {no_op_err!(operand, line_count); inst!(MULT)}
+                    "div" | "/" => {no_op_err!(operand, line_count); inst!(DIV)}
+                    "addf" | "+f" => {no_op_err!(operand, line_count); inst!(ADDF)}
+                    "subf" | "-f" => {no_op_err!(operand, line_count); inst!(SUBF)}
+                    "multf"| "*f" => {no_op_err!(operand, line_count); inst!(MULTF)}
+                    "divf" | "/f" => {no_op_err!(operand, line_count); inst!(DIVF)}
+    				"shl" | "<<" => {no_op_err!(operand, line_count); inst!(SHL)}
+    				"shr" | ">>" => {no_op_err!(operand, line_count); inst!(SHR)}
+    				"and" | "&" => {no_op_err!(operand, line_count); inst!(AND)}
+    				"or"  | "|" => {no_op_err!(operand, line_count); inst!(OR)}
+    				"xor" | "^" => {no_op_err!(operand, line_count); inst!(XOR)}
+    				"not" | "!" => {no_op_err!(operand, line_count); inst!(NOT)}
                     "jmp" => {
                         match operand.parse::<isize>() {
                             Ok(op) => {
-                                Inst::jmp(op)
+                                inst_op!(JMP, op)
                             }
                             Err(_) => {
                                 jmp_vec.push(&operand);
-                                Inst::jmp(-1)
+                                inst_op!(JMP, -1)
                             }
                         }
                     }
@@ -825,29 +699,29 @@ pub mod file {
                     "jmpif" | "jif" => {
                         match operand.parse::<isize>() {
                             Ok(op) => {
-                                Inst::jmpif(op)
+                                inst_op!(JIF, op)
                             }
                             Err(_) => {
                                 jmp_vec.push(&operand);
-                                Inst::jmpif(-1)
+                                inst_op!(JIF, -1)
                             }
                         }
                     }
 
-                    "eq" => {no_op_err!(operand, line_count); Inst::eq()}
-                    "neq"=> {no_op_err!(operand, line_count); Inst::neq()}
-                    "lt" => {no_op_err!(operand, line_count); Inst::lt()}
-                    "gt" => {no_op_err!(operand, line_count); Inst::gt()}
-                    "eqf"=> {no_op_err!(operand, line_count); Inst::eqf()}
-                    "neqf"=>{no_op_err!(operand, line_count); Inst::neqf()}
-                    "ltf"=> {no_op_err!(operand, line_count); Inst::ltf()}
-                    "gtf"=> {no_op_err!(operand, line_count); Inst::gtf()}
-                    "print" | "." => {no_op_err!(operand, line_count); Inst::print()}
-                    "shout"=> {no_op_err!(operand, line_count); Inst::shout()}
-                    "dump" => {no_op_err!(operand, line_count); Inst::dump()}
-                    "empty"=> {no_op_err!(operand, line_count); Inst::empty()}
-                    "ifempty"=> {no_op_err!(operand, line_count); Inst::ifempty()}
-                    "halt" => {no_op_err!(operand, line_count); Inst::halt()}
+                    "eq" => {no_op_err!(operand, line_count); inst!(EQ)}
+                    "neq"=> {no_op_err!(operand, line_count); inst!(NEQ)}
+                    "lt" => {no_op_err!(operand, line_count); inst!(LT)}
+                    "gt" => {no_op_err!(operand, line_count); inst!(GT)}
+                    "eqf"=> {no_op_err!(operand, line_count); inst!(EQF)}
+                    "neqf"=>{no_op_err!(operand, line_count); inst!(NEQF)}
+                    "ltf"=> {no_op_err!(operand, line_count); inst!(LTF)}
+                    "gtf"=> {no_op_err!(operand, line_count); inst!(GTF)}
+                    "print" | "." => {no_op_err!(operand, line_count); inst!(PRINT)}
+                    "shout"=> {no_op_err!(operand, line_count); inst!(SHOUT)}
+                    "dump" => {no_op_err!(operand, line_count); inst!(DUMP)}
+                    "empty"=> {no_op_err!(operand, line_count); inst!(EMPTY)}
+                    "ifempty"=> {no_op_err!(operand, line_count); inst!(IFEMPTY)}
+                    "halt" => {no_op_err!(operand, line_count); inst!(HALT)}
 
                     &_ => {
                         eprintln!("Error: Illegal instruction number: {} or I forgot to include some", inst_vec.len());
@@ -876,7 +750,7 @@ pub mod file {
         let mut constant = 0;
         let mut sub_remain = sub_vec.len();
         for i in 0..inst_vec.len() {
-            if !inst_vec[i].kind.1 && inst_vec[i].kind.0 == InstType::PUSH {
+            if inst_vec[i].kind.0 == InstType::PUSH && !inst_vec[i].kind.1 {
                 let mut op = 0;
                 for j in 0..const_vec.len() {
                     if const_vec[j].name == sub_vec[constant] {

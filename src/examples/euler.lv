@@ -1,7 +1,7 @@
 push 10 ;iterations
 push 1. ;factorial accum
-push 1. ;iteration for factorial
-push 2. ;sum
+push 0. ;iteration for factorial
+push 1. ;sum
 
 loop:
     push 1. ;1/factorial
