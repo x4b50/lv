@@ -45,6 +45,7 @@ pub enum InstType {
     POP,
     DUP,
     PICK,
+    SHOVE,
     ADD,
     SUB,
     MULT,
@@ -75,13 +76,6 @@ pub enum InstType {
     IFEMPTY,
     HALT,
 }
-
-const INST_W_OP: [InstType;2] = [
-        InstType::PUSH,
-        InstType::PICK,
-        // InstType::JMP,
-        // InstType::JIF,
-];
 
 #[derive(Debug)]
 pub enum ExecErr {
@@ -136,7 +130,7 @@ impl Lada {
         }
     }
 
-    pub fn exec_inst(&mut self) -> Result<(), ExecErr> {
+    pub fn exec_inst(&mut self, print_type: &PrintType) -> Result<(), ExecErr> {
         if self.ip >= self.program.len() {
             return Err(ExecErr::IllegalInstAddr)
         }
@@ -174,11 +168,19 @@ impl Lada {
                 if self.stack_size >= self.stack.len() {
                     return Err(ExecErr::StackOverflow)
                 }
-                if inst.operand < 0 || inst.operand >= self.stack_size as isize {
+                if self.stack[self.stack_size-1] < 0 || self.stack[self.stack_size-1] >= self.stack_size as isize {
                     return Err(ExecErr::IllegalAddr);
                 }
-                self.stack[self.stack_size] = self.stack[self.stack_size -1 -inst.operand as usize];
-                self.stack_size += 1;
+                self.stack[self.stack_size-1] = self.stack[self.stack_size -1 -self.stack[self.stack_size-1] as usize];
+            }
+
+            InstType::SHOVE => {
+                if self.stack[self.stack_size-1] < 0 || self.stack[self.stack_size-1] >= self.stack_size as isize -1 {
+                    return Err(ExecErr::IllegalAddr);
+                }
+                let adr = self.stack_size -2 -self.stack[self.stack_size-1]as usize;
+                self.stack[adr] = self.stack[self.stack_size -2];
+                self.stack_size -= 2;
             }
 
             InstType::ADD => {
@@ -355,7 +357,7 @@ impl Lada {
                     return Err(ExecErr::StackUnderflow)
                 }
                 print!("Stack: ");
-                self.stack_print(&PrintType::I64);
+                self.stack_print(&print_type);
             }
 
             InstType::EMPTY => {
@@ -382,9 +384,6 @@ impl Inst {
     pub fn push(operand: isize) -> Inst {
         Inst { kind: (InstType::PUSH, true), operand}
     }
-    pub fn pick(operand: isize) -> Inst {
-        Inst { kind: (InstType::PICK, true), operand}
-    }
     pub fn jmp(operand: isize) -> Inst {
         Inst { kind: (InstType::JMP, true), operand}
     }
@@ -400,6 +399,12 @@ impl Inst {
     }
     pub fn dup() -> Inst {
         Inst { kind: (InstType::DUP, false), operand: 0 }
+    }
+    pub fn pick() -> Inst {
+        Inst { kind: (InstType::PICK, false), operand: 0}
+    }
+    pub fn shove() -> Inst {
+        Inst { kind: (InstType::SHOVE, false), operand: 0}
     }
     pub fn add() -> Inst {
         Inst { kind: (InstType::ADD, false), operand: 0 }
@@ -475,7 +480,8 @@ impl Inst {
             InstType::PUSH  => {format!("push {}\n", self.operand)}
             InstType::POP   => {format!("pop\n")}
             InstType::DUP   => {format!("dup\n")}
-            InstType::PICK  => {format!("pick {}\n", self.operand)}
+            InstType::PICK  => {format!("pick\n")}
+            InstType::SHOVE => {format!("shove\n")}
             InstType::ADD   => {format!("add\n")}
             InstType::SUB   => {format!("sub\n")}
             InstType::MULT  => {format!("mult\n")}
@@ -717,21 +723,8 @@ pub mod file {
 
                     "pop" => {no_op_err!(operand, line_count); Inst::pop()}
                     "dup" => {no_op_err!(operand, line_count); Inst::dup()}
-                    "pick" => {
-                        match operand.parse::<isize>() {
-                            Ok(op) => {
-                                Inst::pick(op)
-                            }
-                            Err(_) => {
-                                sub_vec.push(&operand);
-                                Inst {
-                                    kind: (InstType::PICK, false),
-                                    operand: 0
-                                }
-                            }
-                        }
-                    }
-
+                    "pick"=> {no_op_err!(operand, line_count); Inst::pick()}
+                    "shove"=>{no_op_err!(operand, line_count); Inst::shove()}
                     "add" => {no_op_err!(operand, line_count); Inst::add()}
                     "sub" => {no_op_err!(operand, line_count); Inst::sub()}
                     "mult"=> {no_op_err!(operand, line_count); Inst::mult()}
@@ -806,7 +799,7 @@ pub mod file {
         let mut constant = 0;
         let mut sub_remain = sub_vec.len();
         for i in 0..inst_vec.len() {
-            if !inst_vec[i].kind.1 && INST_W_OP.contains(&inst_vec[i].kind.0) {
+            if !inst_vec[i].kind.1 && inst_vec[i].kind.0 == InstType::PUSH {
                 let mut op = 0;
                 for j in 0..const_vec.len() {
                     if const_vec[j].name == sub_vec[constant] {
@@ -819,6 +812,7 @@ pub mod file {
                 constant += 1;
             }
         }
+
         if sub_remain != 0 {
             eprintln!("Used macro of invalid name");
             return Err((ExecErr::IllegalOperand, 0));

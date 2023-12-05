@@ -3,7 +3,8 @@ push 1
 ;main loop
 loop:
 dup
-pick 2
+push 3
+pick
 add
 .   ;print top value
 jmp loop

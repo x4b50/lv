@@ -10,7 +10,8 @@ push $float
 label:
     push $float
     multf
-    pick 1
+    push 2
+    pick
     push 1
     sub
     shout

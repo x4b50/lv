@@ -7,7 +7,7 @@ fn main() -> ExitCode {
     let mut debug = false;
     let mut print_type = PrintType::I64;
 
-    {// no need to hold the copied string in mem
+    {// arg parsing - no need to hold the copied string in mem
         let args: Vec<_> = std::env::args().collect();
         if args.len() < 2 {
             eprintln!("Not enough arguments:\n./lv <source.lb> optional: <stack capacity> -d (debug) -f (print stack as floats)");
@@ -42,7 +42,7 @@ fn main() -> ExitCode {
     let mut vm = Lada::init(prog, stack_cap);
     let mut ip = 0;
     while !vm.halted {
-        match vm.exec_inst() {
+        match vm.exec_inst(&print_type) {
             Ok(_) => {if debug {
                 print!("Inst: {}: {}    \t", ip, vm.program[ip]);
                 vm.stack_print(&print_type);

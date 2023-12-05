@@ -1,0 +1,35 @@
+push 10 ;iterations
+push 1. ;factorial accum
+push 1. ;iteration for factorial
+push 2. ;sum
+
+loop:
+    push 1. ;1/factorial
+    push 4
+    pick    ;get factorial sum
+    push 4
+    pick    ;get iteration
+    push 1.
+    addf    ;incr iter
+    dup
+    push 5
+    shove   ;save iteration
+    multf   ;calc current factorial
+    dup
+    push 5
+    shove   ;save factorial
+    divf    ;1/factorial
+    addf    ;add next term
+    push 4
+    pick    ;get iterations
+    push 1
+    sub     ;decr
+    dup
+    push 5
+    shove   ;save iteration
+    push 0
+    gt
+    jif loop    ;continue if more than 0
+dump
+print
+halt

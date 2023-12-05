@@ -41,7 +41,8 @@ nop         ;no op
 push 7      ;push 7 on the stack
 pop         ;pop the top of the stack
 dup         ;duplicate top of the stack
-pick 2      ;copy second value from the top of the stack - pick 0 = dup
+pick        ;gets top value and replaces it with one that is that amount lower in the stack
+shove       ;gets two top values and pushes the 1 one lower on the stack by the amount specified by the second
 add         ;add two values at the top of the stack
 sub         ;subtract two values at the top of the stack
 mult        ;multiply two values at the top of the stack
@@ -73,7 +74,10 @@ TODO:
 - [ ] add access functions of vm instead of pub
 - [ ] add heap w/ pointers on the stack
 - [ ] add comments in some places
+- [ ] use macros to reduce number of lines
+- [ ] add more tests
 - [x] compiler might not give errors on pushing not defined constants/labels
+- [x] make push the only inst w/ operand
 - [ ] make two type of instruction struct to save space on unused operands (indicate if contains operand to make file parsing possible)
 - [ ] use from_bites for vector conversion
 - [ ] (technical regarding implementation) use f64::from_bites and the like, keep track of changes in implementation in respect to std::mem::trasmute
