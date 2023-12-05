@@ -24,14 +24,22 @@ cargo build -r
 
 For an example of how to use conditions run fib_term example.
 ```sh
-cargo build -r
 ./src/examples/fib_term.sh
 ```
 
 Example of how to use different floating point operations and debug flag.
 ```sh
-cargo build -r
 ./src/examples/float.sh
+```
+
+Example of bitwise operations
+```sh
+./src/examples/binary.sh
+```
+
+Example program calculating eulers number
+```sh
+./src/examples/euler.sh
 ```
 
 ## Writing programs
@@ -71,6 +79,7 @@ TODO:
 - [x] add compile time value definitions
 - [x] make compiler errors give line, not instruction, numbers
 - [x] make floats work
+- [x] add bitwise instructions
 - [ ] add access functions of vm instead of pub
 - [ ] add heap w/ pointers on the stack
 - [ ] add comments in some places

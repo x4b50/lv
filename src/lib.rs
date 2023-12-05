@@ -54,8 +54,13 @@ pub enum InstType {
     SUBF,
     MULTF,
     DIVF,
+    SHL,
+    SHR,
+    AND,
+    OR,
+    XOR,
+    NOT,
     /*
-    bit inst
     ptr,
     ptrn
     // */
@@ -250,6 +255,48 @@ impl Lada {
                 self.stack_size -= 1;
             }
 
+            InstType::SHL => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-2] <<= self.stack[self.stack_size-1];
+                self.stack_size -= 1;
+            }
+            InstType::SHR => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-2] >>= self.stack[self.stack_size-1];
+                self.stack_size -= 1;
+            }
+            InstType::AND => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-2] &= self.stack[self.stack_size-1];
+                self.stack_size -= 1;
+            }
+            InstType::OR => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-2] |= self.stack[self.stack_size-1];
+                self.stack_size -= 1;
+            }
+            InstType::XOR => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-2] ^= self.stack[self.stack_size-1];
+                self.stack_size -= 1;
+            }
+            InstType::NOT => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-1] = !self.stack[self.stack_size-1];
+            }
+
             InstType::JMP => {
                 if inst.operand < 0 || inst.operand as usize >= self.program.len() {
                     return Err(ExecErr::IllegalInstAddr);
@@ -430,6 +477,24 @@ impl Inst {
     pub fn divf() -> Inst {
         Inst { kind: (InstType::DIVF, false), operand: 0 }
     }
+    pub fn shl() -> Inst {
+		Inst { kind: (InstType::SHL, false), operand: 0 }
+	}
+    pub fn shr() -> Inst {
+		Inst { kind: (InstType::SHR, false), operand: 0 }
+	}
+    pub fn and() -> Inst {
+		Inst { kind: (InstType::AND, false), operand: 0 }
+	}
+    pub fn or() -> Inst {
+		Inst { kind: (InstType::OR, false), operand: 0 }
+	}
+    pub fn xor() -> Inst {
+		Inst { kind: (InstType::XOR, false), operand: 0 }
+	}
+    pub fn not() -> Inst {
+		Inst { kind: (InstType::NOT, false), operand: 0 }
+	}
     pub fn eq() -> Inst {
         Inst { kind: (InstType::EQ, false), operand: 0 }
     }
@@ -490,6 +555,12 @@ impl Inst {
             InstType::SUBF  => {format!("subf\n")}
             InstType::MULTF => {format!("multf\n")}
             InstType::DIVF  => {format!("divf\n")}
+            InstType::SHL	=> {format!("shl\n")}
+            InstType::SHR	=> {format!("shr\n")}
+            InstType::AND	=> {format!("and\n")}
+            InstType::OR	=> {format!("or\n")}
+            InstType::XOR	=> {format!("xor\n")}
+            InstType::NOT	=> {format!("not\n")}
             InstType::JMP   => {format!("jmp {}\n", self.operand)}
             InstType::JIF   => {format!("jmpif {}\n", self.operand)}
             InstType::EQ    => {format!("eq\n")}
@@ -725,14 +796,20 @@ pub mod file {
                     "dup" => {no_op_err!(operand, line_count); Inst::dup()}
                     "pick"=> {no_op_err!(operand, line_count); Inst::pick()}
                     "shove"=>{no_op_err!(operand, line_count); Inst::shove()}
-                    "add" => {no_op_err!(operand, line_count); Inst::add()}
-                    "sub" => {no_op_err!(operand, line_count); Inst::sub()}
-                    "mult"=> {no_op_err!(operand, line_count); Inst::mult()}
-                    "div" => {no_op_err!(operand, line_count); Inst::div()}
-                    "addf"=> {no_op_err!(operand, line_count); Inst::addf()}
-                    "subf"=> {no_op_err!(operand, line_count); Inst::subf()}
-                    "multf"=>{no_op_err!(operand, line_count); Inst::multf()}
-                    "divf"=> {no_op_err!(operand, line_count); Inst::divf()}
+                    "add" | "+" => {no_op_err!(operand, line_count); Inst::add()}
+                    "sub" | "-" => {no_op_err!(operand, line_count); Inst::sub()}
+                    "mult"| "*" => {no_op_err!(operand, line_count); Inst::mult()}
+                    "div" | "/" => {no_op_err!(operand, line_count); Inst::div()}
+                    "addf" | "+f" => {no_op_err!(operand, line_count); Inst::addf()}
+                    "subf" | "-f" => {no_op_err!(operand, line_count); Inst::subf()}
+                    "multf"| "*f" => {no_op_err!(operand, line_count); Inst::multf()}
+                    "divf" | "/f" => {no_op_err!(operand, line_count); Inst::divf()}
+    				"shl" | "<<" => {no_op_err!(operand, line_count); Inst::shl()}
+    				"shr" | ">>" => {no_op_err!(operand, line_count); Inst::shr()}
+    				"and" | "&" => {no_op_err!(operand, line_count); Inst::and()}
+    				"or"  | "|" => {no_op_err!(operand, line_count); Inst::or()}
+    				"xor" | "^" => {no_op_err!(operand, line_count); Inst::xor()}
+    				"not" | "!" => {no_op_err!(operand, line_count); Inst::not()}
                     "jmp" => {
                         match operand.parse::<isize>() {
                             Ok(op) => {
