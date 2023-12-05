@@ -1,0 +1,53 @@
+$call_len 3 ;offset for after arguments
+jmp main
+
+;a, b, t, ret
+lerp:
+    push 3  ;get b
+    pick
+    push 5  ;get a
+    pick
+    subf
+    push 3  ;get t
+    pick
+    multf
+    push 5  ;get a
+    pick
+    addf    ;a+(b-a)*t
+    push 4  ;push it to first arg
+    shove
+    push 2  ;push return to second arg
+    shove
+    pop     ;pop out last arg
+    ret     ;no args left, only the return value
+
+main:
+    push 5.
+    push 20.
+    push 0.
+    push #
+    jmp lerp
+    shout
+    
+    push 5.
+    push 20.
+    push 1.
+    push #
+    jmp lerp
+    shout
+    
+    push 5.
+    push 20.
+    push 0.5
+    push #
+    jmp lerp
+    shout
+    
+    push 6.9
+    push 21.37
+    push 0.666
+    push #
+    jmp lerp
+    shout
+    
+halt

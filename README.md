@@ -86,13 +86,16 @@ halt        ;stops the execution
 - [x] make compiler errors give line, not instruction, numbers
 - [x] make floats work
 - [x] add bitwise instructions
+- [x] add subroutines
 - [ ] add access functions of vm instead of pub
 - [ ] add heap w/ pointers on the stack
 - [ ] add comments in some places
-- [ ] use macros to reduce number of lines
+- [x] use macros to reduce number of lines (there are technically still some)
 - [ ] add more tests
 - [x] compiler might not give errors on pushing not defined constants/labels
 - [x] make push the only inst w/ operand
+- [ ] do label/const substitution while parsing instructions
+- [ ] use split_whitespace() while parsing
 - [ ] make two type of instruction struct to save space on unused operands (indicate if contains operand to make file parsing possible)
 - [ ] use from_bites for vector conversion
 - [ ] (technical regarding implementation) use f64::from_bites and the like, keep track of changes in implementation in respect to std::mem::trasmute

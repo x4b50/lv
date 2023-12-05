@@ -13,7 +13,6 @@ macro_rules! no_op_err {
 macro_rules! f64 {
     ($dest:expr, $op:tt, $source:expr) => {
         unsafe{ $dest = transmute::<f64, isize>(transmute::<isize, f64>($dest) $op transmute::<isize, f64>($source));}
-        // $dest = (f64::from_bits($s1 as u64) $op f64::from_bits($s2 as u64)).to_bits() as isize;
     };
 }
 
@@ -94,6 +93,7 @@ pub enum InstType {
     DUMP,
     EMPTY,
     IFEMPTY,
+    RET,
     HALT,
 }
 
@@ -411,7 +411,7 @@ impl Lada {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
                 }
-                println!("{}", self.stack[self.stack_size-1]);
+                unsafe { println!("{i} | {i:X} | {f:.7e}", i=self.stack[self.stack_size-1], f=transmute::<isize, f64>(self.stack[self.stack_size-1])); }
                 self.stack_size -= 1;
             }
 
@@ -433,6 +433,15 @@ impl Lada {
                 } else {
                     self.stack[self.stack_size] = 0;
                 }
+            }
+
+            InstType::RET => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow);
+                }
+                self.ip = self.stack[self.stack_size-1] as usize;
+                self.stack_size -= 1;
+                self.ip += 1;
             }
 
             InstType::HALT => self.halted = true
@@ -607,17 +616,13 @@ pub mod file {
                         (_,value) = value.split_at(1);
                         const_vec.push(Constant{
                             name: const_name.to_string(),
-                            value: match value.parse::<isize>() {
-                                Ok(v) => v,
-                                Err(_) => {
-                                    match value.parse::<f64>() {
-                                        Ok(v) => unsafe {transmute::<f64, isize>(v)},
-                                        Err(e) => {
-                                            eprintln!("Invalid argument in macro definition: {e}");
-                                            return Err((ExecErr::IllegalOperand, line_count));
-                                        }
-                                    }
-                                }
+                            value: if let Ok(v) = value.parse::<isize>() {
+                                v
+                            } else if let Ok(v) = value.parse::<f64>() {
+                                unsafe {transmute::<f64, isize>(v)}
+                            } else {
+                                eprintln!("Invalid argument in macro definition");
+                                return Err((ExecErr::IllegalOperand, line_count));
                             }
                         });
                         line = "";
@@ -627,7 +632,7 @@ pub mod file {
                 }
             }
 
-            if line.len() == 0 {continue}
+            if line.trim().len() == 0 {continue;}
             char_count = 0;
             for char in line.chars() {
                 if char == ' ' {
@@ -645,23 +650,17 @@ pub mod file {
                 match inst {
                     "nop" => {no_op_err!(operand, line_count); inst!(NOP)}
                     "push" => {
-                        match operand.parse::<isize>() {
-                            Ok(op) => {
-                                inst_op!(PUSH, op)
-                            }
-                            Err(_) => {
-                                match operand.parse::<f64>() {
-                                    Ok(op) => {
-                                        inst_op!(PUSH, (unsafe { transmute::<f64, isize>(op)}))
-                                    }
-                                    Err(_) => {
-                                        sub_vec.push(&operand);
-                                        Inst {
-                                            kind: (InstType::PUSH, false),
-                                            operand: 0
-                                        }
-                                    }
-                                }
+                        if let Ok(op) = operand.parse::<isize>() {
+                            inst_op!(PUSH, op)
+                        } else if let Ok(op) = operand.parse::<f64>() {
+                            inst_op!(PUSH, unsafe {transmute::<f64, isize>(op)})
+                        } else if let "#" = operand {
+                            inst_op!(PUSH, inst_vec.len()as isize)
+                        } else {
+                            sub_vec.push(&operand);
+                            Inst {
+                                kind: (InstType::PUSH, false),
+                                operand: 0
                             }
                         }
                     }
@@ -685,26 +684,20 @@ pub mod file {
     				"xor" | "^" => {no_op_err!(operand, line_count); inst!(XOR)}
     				"not" | "!" => {no_op_err!(operand, line_count); inst!(NOT)}
                     "jmp" => {
-                        match operand.parse::<isize>() {
-                            Ok(op) => {
-                                inst_op!(JMP, op)
-                            }
-                            Err(_) => {
-                                jmp_vec.push(&operand);
-                                inst_op!(JMP, -1)
-                            }
+                        if let Ok(op) = operand.parse::<isize>() {
+                            inst_op!(JMP, op)
+                        } else {
+                            jmp_vec.push(&operand);
+                            inst_op!(JMP, -1)
                         }
                     }
 
                     "jmpif" | "jif" => {
-                        match operand.parse::<isize>() {
-                            Ok(op) => {
-                                inst_op!(JIF, op)
-                            }
-                            Err(_) => {
-                                jmp_vec.push(&operand);
-                                inst_op!(JIF, -1)
-                            }
+                        if let Ok(op) = operand.parse::<isize>() {
+                            inst_op!(JIF, op)
+                        } else {
+                            jmp_vec.push(&operand);
+                            inst_op!(JIF, -1)
                         }
                     }
 
@@ -721,6 +714,7 @@ pub mod file {
                     "dump" => {no_op_err!(operand, line_count); inst!(DUMP)}
                     "empty"=> {no_op_err!(operand, line_count); inst!(EMPTY)}
                     "ifempty"=> {no_op_err!(operand, line_count); inst!(IFEMPTY)}
+                    "ret"  => {no_op_err!(operand, line_count); inst!(RET)}
                     "halt" => {no_op_err!(operand, line_count); inst!(HALT)}
 
                     &_ => {
@@ -732,19 +726,27 @@ pub mod file {
         }
 
         let mut jmp = 0;
+        let mut jmp_remain = jmp_vec.len();
         for i in 0..inst_vec.len() {
-            if inst_vec[i].kind.0 == InstType::JMP || inst_vec[i].kind.0 == InstType::JIF {
+            if inst_vec[i].kind.0 == InstType::JMP
+                || inst_vec[i].kind.0 == InstType::JIF {
                 if inst_vec[i].operand < 0 {
                     let mut op = 0;
                     for j in 0..label_vec.len() {
                         if label_vec[j].name == jmp_vec[jmp] {
                             op = label_vec[j].addr;
+                            jmp_remain -= 1;
                         }
                     }
                     inst_vec[i].operand = op as isize;
                     jmp += 1;
                 }
             }
+        }
+
+        if jmp_remain != 0 {
+            eprintln!("Used label of invalid name");
+            return Err((ExecErr::IllegalOperand, 0));
         }
 
         let mut constant = 0;
