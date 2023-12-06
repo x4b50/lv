@@ -1,10 +1,11 @@
-use std::process::ExitCode;
+use std::{process::ExitCode, io::stdin};
 use lv::{Lada, file::*, Inst, InstType, PrintType};
 
 fn main() -> ExitCode {
     let prog;
     let mut stack_cap: usize = 32;
     let mut debug = false;
+    let mut debug_step = false;
     let mut print_type = PrintType::I64;
 
     {// arg parsing - no need to hold the copied string in mem
@@ -25,6 +26,7 @@ fn main() -> ExitCode {
 
         for i in 2..args.len() {
             if args[i] == "-d" {debug=true}
+            else if args[i] == "-D" {debug=true;debug_step=true}
             else if args[i] == "-f" {print_type = PrintType::F64}
             else if args[i] == "-h" {print_type = PrintType::HEX}
             else {
@@ -46,6 +48,10 @@ fn main() -> ExitCode {
             Ok(_) => {if debug {
                 print!("Inst: {}: {}    \t", ip, vm.program[ip]);
                 vm.stack_print(&print_type);
+            }
+            if debug_step {
+                let mut s= String::new();
+                stdin().read_line(&mut s).unwrap();
             }ip = vm.ip}
             Err(e) => {
                 if debug {eprintln!("{:?}", vm)}
