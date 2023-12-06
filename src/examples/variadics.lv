@@ -1,0 +1,121 @@
+$call_len 3 ;offset for after arguments
+jmp main
+
+;ret, a...x, n
+variadic:
+    dup
+    push 0
+    eq
+    jif ret_zero    ;return if n==0
+; add n+1 to ret
+    dup
+    push 1
+    add
+    dup
+    push 2
+    add
+    pick
+    add
+    push 2
+    pick
+    push 2
+    add
+    shove
+; ^^^
+    dup     ;save n
+    push 2  ;account for offset
+    add
+    push 1  ;accumulator for reult
+loop:
+    push 2
+    pick
+    push 1
+    add
+    pick
+    mult    ;mult arguments
+    push 2
+    pick
+    push 1
+    sub
+    dup
+    push 3
+    shove
+    push 2  ;account for offset
+    gt
+    jif loop
+done:
+    push 3
+    shove
+    pop
+    push 2
+    pick
+    push 2
+    pick
+    push 1
+    add
+    shove
+
+pop_args:
+    push 1
+    sub
+    dup
+    push 2
+    shove
+    push 1
+    shove
+    dup
+    push 1
+    gt
+    jif pop_args
+    pop     ;no args left, now switch
+    push 2
+    pick
+    push 2
+    pick
+    push 3
+    shove
+    push 1
+    shove
+    ret
+
+ret_zero:
+    pop     ;get rid of 0
+    push 1
+    add     ;account for arg after push #
+    dup
+    push 0
+    push 2
+    shove   ;shove 0 before adr
+    ret
+
+main:
+    push #
+    push 0  ;push zero arguments
+    jmp variadic
+    shout
+
+    push #
+    push 16
+    push 17
+    push 18
+    push 19
+    push 4  ;number of arguments
+    jmp variadic
+    shout
+
+    push #
+    push -8
+    push 420
+    push -666
+    push 3  ;number of arguments
+    jmp variadic
+    shout
+
+    push #
+    push 6
+    push 9
+    push 2  ;number of arguments
+    jmp variadic
+    shout
+
+halt
