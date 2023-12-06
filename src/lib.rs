@@ -94,6 +94,10 @@ pub enum InstType {
     EMPTY,
     IFEMPTY,
     RET,
+    FTOI,
+    ITOF,
+    FLOOR,
+    CEIL,
     HALT,
 }
 
@@ -444,6 +448,34 @@ impl Lada {
                 self.ip += 1;
             }
 
+            InstType::FTOI => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-1] = unsafe {transmute::<isize, f64>(self.stack[self.stack_size-1]) as isize};
+            }
+
+            InstType::ITOF => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-1] = unsafe {transmute::<f64, isize>(self.stack[self.stack_size-1] as f64)};
+            }
+
+            InstType::FLOOR => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-1] = unsafe {transmute::<f64, isize>(transmute::<isize, f64>(self.stack[self.stack_size-1]).floor())};
+            }
+
+            InstType::CEIL => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-1] = unsafe {transmute::<f64, isize>(transmute::<isize, f64>(self.stack[self.stack_size-1]).ceil())};
+            }
+
             InstType::HALT => self.halted = true
         }
 
@@ -584,7 +616,7 @@ pub mod file {
             for char in line.chars() {
                 if char == ':' {
                     for char in line[0..char_count].chars().rev() {
-                        if !char.is_alphabetic() {
+                        if !char.is_ascii() {
                             break;
                         }
                         label_count += 1;

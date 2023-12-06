@@ -68,11 +68,16 @@ eq          ;check if two values at the top are equal substitutes them with the 
 neq         ;check if two values are not equal
 gt          ;check if the value below is greater than the one on top
 lt          ;opposite of gt
-empty       ;empties the stack
-ifempty     ;if stack is empty pushes true, false if not
 print       ;or . - print the value at the top of the stack (doesn't pop it)
 shout       ;prints and pops
 dump        ;prints the entire stack
+empty       ;empties the stack
+ifempty     ;if stack is empty pushes true, false if not
+ret         ;return from subroutine (accounts for return instruction offset, see examples/implementation)
+ftoi        ;convert value from float to integer
+itof        ;convert value from integer to float
+floor       ;floor float
+ceil        ;ceil float
 halt        ;stops the execution
 ```
 
@@ -91,6 +96,7 @@ halt        ;stops the execution
 - [ ] add heap w/ pointers on the stack
 - [ ] add comments in some places
 - [x] use macros to reduce number of lines (there are technically still some)
+- [x] labels don't parse '_'
 - [ ] add more tests
 - [x] compiler might not give errors on pushing not defined constants/labels
 - [x] make push the only inst w/ operand
