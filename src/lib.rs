@@ -760,6 +760,16 @@ pub mod file {
                     "empty"=> {no_op_err!(operand, line_count); inst!(EMPTY)}
                     "ifempty"=> {no_op_err!(operand, line_count); inst!(IFEMPTY)}
                     "ret"  => {no_op_err!(operand, line_count); inst!(RET)}
+                    "ftoi" => {no_op_err!(operand, line_count);
+                        if inst_vec.last().unwrap().clone() != inst!(CEIL)
+                        && inst_vec.last().unwrap().clone() != inst!(FLOOR) {
+                            eprintln!("WANRING: It is recomended to use 'ceil' or 'floor' before casting to integer");
+                        } // for some reason it doesn't work w/out clone
+                        inst!(FTOI)
+                    }
+                    "itof" => {no_op_err!(operand, line_count); inst!(ITOF)}
+                    "floor"=> {no_op_err!(operand, line_count); inst!(FLOOR)}
+                    "ceil" => {no_op_err!(operand, line_count); inst!(CEIL)}
                     "halt" => {no_op_err!(operand, line_count); inst!(HALT)}
 
                     &_ => {
