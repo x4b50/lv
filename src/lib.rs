@@ -81,11 +81,9 @@ pub enum InstType {
     JMP,
     JIF,
     EQ,
-    NEQ,
     LT,
     GT,
     EQF,
-    NEQF,
     LTF,
     GTF,
     PRINT,
@@ -348,14 +346,6 @@ impl Lada {
                 self.stack_size -= 1;
             }
 
-            InstType::NEQ => {
-                if self.stack_size < 2 {
-                    return Err(ExecErr::StackUnderflow)
-                }
-                self.stack[self.stack_size-2] = (self.stack[self.stack_size-2] != self.stack[self.stack_size-1]) as isize;
-                self.stack_size -= 1;
-            }
-
             InstType::LT => {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
@@ -377,14 +367,6 @@ impl Lada {
                     return Err(ExecErr::StackUnderflow)
                 }
                 f64_bool!(self.stack[self.stack_size-2], ==, self.stack[self.stack_size-1]);
-                self.stack_size -= 1;
-            }
-
-            InstType::NEQF => {
-                if self.stack_size < 2 {
-                    return Err(ExecErr::StackUnderflow)
-                }
-                f64_bool!(self.stack[self.stack_size-2], !=, self.stack[self.stack_size-1]);
                 self.stack_size -= 1;
             }
 
@@ -747,11 +729,9 @@ pub mod file {
                     }
 
                     "eq" => {no_op_err!(operand, line_count); inst!(EQ)}
-                    "neq"=> {no_op_err!(operand, line_count); inst!(NEQ)}
                     "lt" => {no_op_err!(operand, line_count); inst!(LT)}
                     "gt" => {no_op_err!(operand, line_count); inst!(GT)}
                     "eqf"=> {no_op_err!(operand, line_count); inst!(EQF)}
-                    "neqf"=>{no_op_err!(operand, line_count); inst!(NEQF)}
                     "ltf"=> {no_op_err!(operand, line_count); inst!(LTF)}
                     "gtf"=> {no_op_err!(operand, line_count); inst!(GTF)}
                     "print" | "." => {no_op_err!(operand, line_count); inst!(PRINT)}
