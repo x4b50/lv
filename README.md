@@ -84,7 +84,7 @@ halt        ;stops the execution
 - [x] add --help
 - [x] compiler might not give errors on pushing not defined constants/labels
 - [x] make push the only inst w/ operand
-- [ ] do label/const substitution while parsing instructions
+- [x] do label/const substitution while parsing instructions
 - [ ] use split_whitespace() while parsing
 - [ ] make two type of instruction struct to save space on unused operands (indicate if contains operand to make file parsing possible)
 - [ ] use from_bites for vector conversion

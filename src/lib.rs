@@ -567,10 +567,11 @@ pub mod file {
     pub fn asm_parse(source: &str) -> Result<Vec<Inst>, (ExecErr, usize)> {
         let mut line_count = 0;
         let mut inst_vec: Vec<Inst> = vec![];
+        // name, operand, inst number, line
+        let mut unchecked_inst_vec: Vec<(&str, &str, isize, usize)> = vec![];
+        let mut inst_num: isize = 0;
         let mut label_vec: Vec<Label> = vec![];
-        let mut jmp_vec: Vec<&str> = vec![];
         let mut const_vec: Vec<Constant> = vec![];
-        let mut sub_vec: Vec<&str> = vec![];
 
         for mut line in source.lines() {
             line_count += 1;
@@ -605,7 +606,7 @@ pub mod file {
                     }
                     label_vec.push(Label {
                         name: line[char_count-label_count..char_count].to_string(),
-                        addr: inst_vec.len()
+                        addr: inst_num as usize
                     });
                     (_,line) = line.split_at(char_count+1);
                     break;
@@ -660,49 +661,67 @@ pub mod file {
                 (inst,_) = line.split_at(line.len());
             }
 
+            unchecked_inst_vec.push((inst, operand, inst_num, line_count));
+            inst_num += 1;
+        }
+
+        for entry in unchecked_inst_vec {
+            let inst = entry.0;
+            let operand = entry.1;
+            let inst_n = entry.2;
+            let line = entry.3;
             inst_vec.push(
                 match inst {
-                    "nop" => {no_op_err!(operand, line_count); inst!(NOP)}
+                    "nop" => {no_op_err!(operand, line); inst!(NOP)}
                     "push" => {
                         if let Ok(op) = operand.parse::<isize>() {
                             inst_op!(PUSH, op)
                         } else if let Ok(op) = operand.parse::<f64>() {
                             inst_op!(PUSH, unsafe {transmute::<f64, isize>(op)})
                         } else if let "#" = operand {
-                            inst_op!(PUSH, inst_vec.len()as isize)
+                            inst_op!(PUSH, inst_n)
                         } else {
-                            sub_vec.push(&operand);
-                            Inst {
-                                kind: (InstType::PUSH, false),
-                                operand: 0
+                            let mut inst = None;
+                            for constant in &const_vec {
+                                if operand == constant.name {
+                                    inst = Some(inst_op!(PUSH, constant.value)); break;
+                                }
                             }
+                            if let Some(inst) = inst { inst }
+                            else { return Err((ExecErr::IllegalOperand, line));}
                         }
                     }
 
-                    "pop" => {no_op_err!(operand, line_count); inst!(POP)}
-                    "dup" => {no_op_err!(operand, line_count); inst!(DUP)}
-                    "pick"=> {no_op_err!(operand, line_count); inst!(PICK)}
-                    "shove"=>{no_op_err!(operand, line_count); inst!(SHOVE)}
-                    "add" | "+" => {no_op_err!(operand, line_count); inst!(ADD)}
-                    "sub" | "-" => {no_op_err!(operand, line_count); inst!(SUB)}
-                    "mult"| "*" => {no_op_err!(operand, line_count); inst!(MULT)}
-                    "div" | "/" => {no_op_err!(operand, line_count); inst!(DIV)}
-                    "addf" | "+f" => {no_op_err!(operand, line_count); inst!(ADDF)}
-                    "subf" | "-f" => {no_op_err!(operand, line_count); inst!(SUBF)}
-                    "multf"| "*f" => {no_op_err!(operand, line_count); inst!(MULTF)}
-                    "divf" | "/f" => {no_op_err!(operand, line_count); inst!(DIVF)}
-    				"shl" | "<<" => {no_op_err!(operand, line_count); inst!(SHL)}
-    				"shr" | ">>" => {no_op_err!(operand, line_count); inst!(SHR)}
-    				"and" | "&" => {no_op_err!(operand, line_count); inst!(AND)}
-    				"or"  | "|" => {no_op_err!(operand, line_count); inst!(OR)}
-    				"xor" | "^" => {no_op_err!(operand, line_count); inst!(XOR)}
-    				"not" | "!" => {no_op_err!(operand, line_count); inst!(NOT)}
+                    "pop" => {no_op_err!(operand, line); inst!(POP)}
+                    "dup" => {no_op_err!(operand, line); inst!(DUP)}
+                    "pick"=> {no_op_err!(operand, line); inst!(PICK)}
+                    "shove"=>{no_op_err!(operand, line); inst!(SHOVE)}
+                    "add" | "+" => {no_op_err!(operand, line); inst!(ADD)}
+                    "sub" | "-" => {no_op_err!(operand, line); inst!(SUB)}
+                    "mult"| "*" => {no_op_err!(operand, line); inst!(MULT)}
+                    "div" | "/" => {no_op_err!(operand, line); inst!(DIV)}
+                    "addf" | "+f" => {no_op_err!(operand, line); inst!(ADDF)}
+                    "subf" | "-f" => {no_op_err!(operand, line); inst!(SUBF)}
+                    "multf"| "*f" => {no_op_err!(operand, line); inst!(MULTF)}
+                    "divf" | "/f" => {no_op_err!(operand, line); inst!(DIVF)}
+    				"shl" | "<<" => {no_op_err!(operand, line); inst!(SHL)}
+    				"shr" | ">>" => {no_op_err!(operand, line); inst!(SHR)}
+    				"and" | "&" => {no_op_err!(operand, line); inst!(AND)}
+    				"or"  | "|" => {no_op_err!(operand, line); inst!(OR)}
+    				"xor" | "^" => {no_op_err!(operand, line); inst!(XOR)}
+    				"not" | "!" => {no_op_err!(operand, line); inst!(NOT)}
                     "jmp" => {
                         if let Ok(op) = operand.parse::<isize>() {
                             inst_op!(JMP, op)
                         } else {
-                            jmp_vec.push(&operand);
-                            inst_op!(JMP, -1)
+                            let mut inst = None;
+                            for label in &label_vec {
+                                if operand == label.name {
+                                    inst = Some(inst_op!(JMP, label.addr as isize)); break;
+                                }
+                            }
+                            if let Some(inst) = inst { inst }
+                            else { return Err((ExecErr::IllegalAddr, line));}
                         }
                     }
 
@@ -710,87 +729,47 @@ pub mod file {
                         if let Ok(op) = operand.parse::<isize>() {
                             inst_op!(JIF, op)
                         } else {
-                            jmp_vec.push(&operand);
-                            inst_op!(JIF, -1)
+                            let mut inst = None;
+                            for label in &label_vec {
+                                if operand == label.name {
+                                    inst = Some(inst_op!(JIF, label.addr as isize)); break;
+                                }
+                            }
+                            if let Some(inst) = inst { inst }
+                            else { return Err((ExecErr::IllegalAddr, line));}
                         }
                     }
 
-                    "eq" => {no_op_err!(operand, line_count); inst!(EQ)}
-                    "lt" => {no_op_err!(operand, line_count); inst!(LT)}
-                    "gt" => {no_op_err!(operand, line_count); inst!(GT)}
-                    "eqf"=> {no_op_err!(operand, line_count); inst!(EQF)}
-                    "ltf"=> {no_op_err!(operand, line_count); inst!(LTF)}
-                    "gtf"=> {no_op_err!(operand, line_count); inst!(GTF)}
-                    "print" | "." => {no_op_err!(operand, line_count); inst!(PRINT)}
-                    "shout"=> {no_op_err!(operand, line_count); inst!(SHOUT)}
-                    "dump" => {no_op_err!(operand, line_count); inst!(DUMP)}
-                    "empty"=> {no_op_err!(operand, line_count); inst!(EMPTY)}
-                    "ifempty"=> {no_op_err!(operand, line_count); inst!(IFEMPTY)}
-                    "ret"  => {no_op_err!(operand, line_count); inst!(RET)}
-                    "ftoi" => {no_op_err!(operand, line_count);
-                        if inst_vec.last().unwrap().clone() != inst!(CEIL)
-                        && inst_vec.last().unwrap().clone() != inst!(FLOOR) {
+                    "eq" => {no_op_err!(operand, line); inst!(EQ)}
+                    "lt" => {no_op_err!(operand, line); inst!(LT)}
+                    "gt" => {no_op_err!(operand, line); inst!(GT)}
+                    "eqf"=> {no_op_err!(operand, line); inst!(EQF)}
+                    "ltf"=> {no_op_err!(operand, line); inst!(LTF)}
+                    "gtf"=> {no_op_err!(operand, line); inst!(GTF)}
+                    "print" | "." => {no_op_err!(operand, line); inst!(PRINT)}
+                    "shout"=> {no_op_err!(operand, line); inst!(SHOUT)}
+                    "dump" => {no_op_err!(operand, line); inst!(DUMP)}
+                    "empty"=> {no_op_err!(operand, line); inst!(EMPTY)}
+                    "ifempty"=> {no_op_err!(operand, line); inst!(IFEMPTY)}
+                    "ret"  => {no_op_err!(operand, line); inst!(RET)}
+                    "ftoi" => {no_op_err!(operand, line);
+                        if inst_vec[inst_n as usize-1].clone() != inst!(CEIL)
+                        && inst_vec[inst_n as usize-1].clone() != inst!(FLOOR) {
                             eprintln!("WANRING: It is recomended to use 'ceil' or 'floor' before casting to integer");
                         } // for some reason it doesn't work w/out clone
                         inst!(FTOI)
                     }
-                    "itof" => {no_op_err!(operand, line_count); inst!(ITOF)}
-                    "floor"=> {no_op_err!(operand, line_count); inst!(FLOOR)}
-                    "ceil" => {no_op_err!(operand, line_count); inst!(CEIL)}
-                    "halt" => {no_op_err!(operand, line_count); inst!(HALT)}
+                    "itof" => {no_op_err!(operand, line); inst!(ITOF)}
+                    "floor"=> {no_op_err!(operand, line); inst!(FLOOR)}
+                    "ceil" => {no_op_err!(operand, line); inst!(CEIL)}
+                    "halt" => {no_op_err!(operand, line); inst!(HALT)}
 
                     &_ => {
                         eprintln!("Error: Illegal instruction number: {} or I forgot to include some", inst_vec.len());
-                        return Err((ExecErr::IllegalInst, line_count));
+                        return Err((ExecErr::IllegalInst, line));
                     }
                 }
             );
-        }
-
-        let mut jmp = 0;
-        let mut jmp_remain = jmp_vec.len();
-        for i in 0..inst_vec.len() {
-            if inst_vec[i].kind.0 == InstType::JMP
-                || inst_vec[i].kind.0 == InstType::JIF {
-                if inst_vec[i].operand < 0 {
-                    let mut op = 0;
-                    for j in 0..label_vec.len() {
-                        if label_vec[j].name == jmp_vec[jmp] {
-                            op = label_vec[j].addr;
-                            jmp_remain -= 1;
-                        }
-                    }
-                    inst_vec[i].operand = op as isize;
-                    jmp += 1;
-                }
-            }
-        }
-
-        if jmp_remain != 0 {
-            eprintln!("Used label of invalid name");
-            return Err((ExecErr::IllegalOperand, 0));
-        }
-
-        let mut constant = 0;
-        let mut sub_remain = sub_vec.len();
-        for i in 0..inst_vec.len() {
-            if inst_vec[i].kind.0 == InstType::PUSH && !inst_vec[i].kind.1 {
-                let mut op = 0;
-                for j in 0..const_vec.len() {
-                    if const_vec[j].name == sub_vec[constant] {
-                        op = const_vec[j].value;
-                        sub_remain -= 1;
-                    }
-                }
-                inst_vec[i].kind.1 = true;
-                inst_vec[i].operand = op as isize;
-                constant += 1;
-            }
-        }
-
-        if sub_remain != 0 {
-            eprintln!("Used macro of invalid name");
-            return Err((ExecErr::IllegalOperand, 0));
         }
 
         Ok(inst_vec)
