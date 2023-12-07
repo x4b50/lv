@@ -1,14 +1,15 @@
 #[macro_export]
 macro_rules! prog {
     () => { vec![
-            Inst::push(0),
-            Inst::push(69),
-            Inst::dup(),
-            Inst::pick(2),
-            Inst::add(),
-            Inst::print(),
-            Inst::jmp(2),
-            Inst::halt(),
+            inst_op!(PUSH, 0),
+            inst_op!(PUSH, 69),
+            inst!(DUP),
+            inst_op!(PUSH,2),
+            inst!(PICK),
+            inst!(ADD),
+            inst!(PRINT),
+            inst_op!(JMP, 2),
+            inst!(HALT),
         ]
     };
 }
@@ -32,7 +33,7 @@ pub mod tests{
 
     #[test]
     fn check_asm_translate() {
-        let source: &str = "push 0\npush 69\ndup\npick 2\nadd\n.\njmp 2\nhalt";
+        let source: &str = "push 0\npush 69\ndup\npush 2\npick\nadd\n.\njmp 2\nhalt";
         let asm_prog = file::asm_parse(source).unwrap();
         let prog = prog!();
         for i in 0..prog.len() {
@@ -42,7 +43,7 @@ pub mod tests{
 
     #[test]
     fn check_asm_translate_comment() {
-        let source: &str = "push 0\npush 69  ;comment\ndup;___\n    ;   \npick 2\nadd\n.\njmp 2\nhalt";
+        let source: &str = "push 0\npush 69  ;comment\ndup;___\n    ;   \npush 2\npick\nadd\n.\njmp 2\nhalt";
         let asm_prog = file::asm_parse(source).unwrap();
         let prog = prog!();
         for i in 0..prog.len() {
