@@ -1,12 +1,13 @@
-$const 3
+%const 3
 
 push 0
 jmp first
 th:
-push $const
+push %const
 sub
 jmp four
-; if it gets parsed correctly then wow
+; should get parsed correctly
+# also a comment
 
 sec:
     push 2
@@ -25,5 +26,8 @@ jmpif halt
 jmp sec
 
 halt:
+push 6.9
+; ceil
+ftoi
 dump
 halt

@@ -17,6 +17,10 @@ fn main() -> ExitCode {
         }
     };
 
+    // for parsing args, include option tu use cpp, if so ofset the line on error
+    // for i in 2..args.len() {
+    // }
+
     let mut prog = match asm_parse(&source) {
         Ok(p) => p,
         Err((e,n)) => {

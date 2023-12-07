@@ -1,14 +1,14 @@
 ; floating point
-$threshold 100.0
-$float 4.2
+%threshold 100.0
+%float 4.2
 ; integer
-$int 14
+%int 14
 
 start:
-push $int
-push $float
+push %int
+push %float
 label:
-    push $float
+    push %float
     multf
     push 2
     pick
@@ -16,7 +16,7 @@ label:
     sub
     shout
     dup
-    push $threshold
+    push %threshold
     ltf
     jmpif label
     halt

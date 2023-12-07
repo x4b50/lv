@@ -82,7 +82,7 @@ pop_args:
 ret_zero:
     pop     ;get rid of 0
     push 1
-    add     ;account for arg after push #
+    add     ;account for arg after push $
     dup
     push 0
     push 2
@@ -90,12 +90,12 @@ ret_zero:
     ret
 
 main:
-    push #
+    push $
     push 0  ;push zero arguments
     jmp variadic
     shout
 
-    push #
+    push $
     push 16
     push 17
     push 18
@@ -104,7 +104,7 @@ main:
     jmp variadic
     shout
 
-    push #
+    push $
     push -8
     push 420
     push -666
@@ -112,7 +112,7 @@ main:
     jmp variadic
     shout
 
-    push #
+    push $
     push 6
     push 9
     push 2  ;number of arguments

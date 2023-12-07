@@ -582,7 +582,7 @@ pub mod file {
             let mut label_count = 0;
 
             for char in line.chars() {
-                if char == ';' {
+                if char == ';' || char == '#' {
                     for char in line[0..char_count].chars().rev() {
                         if char != ' ' {
                             break;
@@ -624,7 +624,7 @@ pub mod file {
             }
 
             char_count = 0;
-            if line.starts_with('$') {
+            if line.starts_with('%') {
                 for char in line.chars() {
                     if char == ' ' {
                         let (const_name, mut value) = line.split_at(char_count);
@@ -678,7 +678,7 @@ pub mod file {
                             inst_op!(PUSH, op)
                         } else if let Ok(op) = operand.parse::<f64>() {
                             inst_op!(PUSH, unsafe {transmute::<f64, isize>(op)})
-                        } else if let "#" = operand {
+                        } else if let "$" = operand {
                             inst_op!(PUSH, inst_n)
                         } else {
                             let mut inst = None;

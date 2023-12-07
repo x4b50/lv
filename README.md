@@ -26,6 +26,7 @@ cargo build -r
 ```
 
 ## Writing programs
+Comments can be either ";" or "#" to allow for the use of C preprocessor
 ``` nasm
 start:      ;create a label
 nop         ;no op
