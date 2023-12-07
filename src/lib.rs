@@ -671,6 +671,7 @@ pub mod file {
             let inst_n = entry.2;
             let line = entry.3;
             inst_vec.push(
+                // this could be collapsed a bunch
                 match inst {
                     "nop" => {no_op_err!(operand, line); inst!(NOP)}
                     "push" => {
