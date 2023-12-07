@@ -1,4 +1,5 @@
 ;run in debug to see how it works
+;maybe swap inst would make it a bit easier
 jmp main
 
 ;ret, a...x, n

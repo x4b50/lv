@@ -586,9 +586,7 @@ pub mod file {
         let mut line_count = 0;
         let mut inst_vec: Vec<Inst> = vec![];
         let mut label_vec: Vec<Label> = vec![];
-        let mut jmp_vec: Vec<&str> = vec![];
         let mut const_vec: Vec<Constant> = vec![];
-        let mut sub_vec: Vec<&str> = vec![];
 
         for mut line in source.lines() {
             line_count += 1;
@@ -689,11 +687,14 @@ pub mod file {
                         } else if let "#" = operand {
                             inst_op!(PUSH, inst_vec.len()as isize)
                         } else {
-                            sub_vec.push(&operand);
-                            Inst {
-                                kind: (InstType::PUSH, false),
-                                operand: 0
+                            let mut inst = None;
+                            for constant in &const_vec {
+                                if operand == constant.name {
+                                    inst = Some(inst_op!(PUSH, constant.value)); break;
+                                }
                             }
+                            if let Some(inst) = inst { inst }
+                            else { return Err((ExecErr::IllegalOperand, line_count));}
                         }
                     }
 
@@ -719,8 +720,14 @@ pub mod file {
                         if let Ok(op) = operand.parse::<isize>() {
                             inst_op!(JMP, op)
                         } else {
-                            jmp_vec.push(&operand);
-                            inst_op!(JMP, -1)
+                            let mut inst = None;
+                            for label in &label_vec {
+                                if operand == label.name {
+                                    inst = Some(inst_op!(JMP, label.addr as isize)); break;
+                                }
+                            }
+                            if let Some(inst) = inst { inst }
+                            else { return Err((ExecErr::IllegalAddr, line_count));}
                         }
                     }
 
@@ -728,8 +735,14 @@ pub mod file {
                         if let Ok(op) = operand.parse::<isize>() {
                             inst_op!(JIF, op)
                         } else {
-                            jmp_vec.push(&operand);
-                            inst_op!(JIF, -1)
+                            let mut inst = None;
+                            for label in &label_vec {
+                                if operand == label.name {
+                                    inst = Some(inst_op!(JIF, label.addr as isize)); break;
+                                }
+                            }
+                            if let Some(inst) = inst { inst }
+                            else { return Err((ExecErr::IllegalAddr, line_count));}
                         }
                     }
 
@@ -755,52 +768,6 @@ pub mod file {
                     }
                 }
             );
-        }
-
-        let mut jmp = 0;
-        let mut jmp_remain = jmp_vec.len();
-        for i in 0..inst_vec.len() {
-            if inst_vec[i].kind.0 == InstType::JMP
-                || inst_vec[i].kind.0 == InstType::JIF {
-                if inst_vec[i].operand < 0 {
-                    let mut op = 0;
-                    for j in 0..label_vec.len() {
-                        if label_vec[j].name == jmp_vec[jmp] {
-                            op = label_vec[j].addr;
-                            jmp_remain -= 1;
-                        }
-                    }
-                    inst_vec[i].operand = op as isize;
-                    jmp += 1;
-                }
-            }
-        }
-
-        if jmp_remain != 0 {
-            eprintln!("Used label of invalid name");
-            return Err((ExecErr::IllegalOperand, 0));
-        }
-
-        let mut constant = 0;
-        let mut sub_remain = sub_vec.len();
-        for i in 0..inst_vec.len() {
-            if inst_vec[i].kind.0 == InstType::PUSH && !inst_vec[i].kind.1 {
-                let mut op = 0;
-                for j in 0..const_vec.len() {
-                    if const_vec[j].name == sub_vec[constant] {
-                        op = const_vec[j].value;
-                        sub_remain -= 1;
-                    }
-                }
-                inst_vec[i].kind.1 = true;
-                inst_vec[i].operand = op as isize;
-                constant += 1;
-            }
-        }
-
-        if sub_remain != 0 {
-            eprintln!("Used macro of invalid name");
-            return Err((ExecErr::IllegalOperand, 0));
         }
 
         Ok(inst_vec)

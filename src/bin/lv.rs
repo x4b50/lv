@@ -1,6 +1,15 @@
 use std::{process::ExitCode, io::stdin};
 use lv::{Lada, file::*, Inst, InstType, PrintType};
 
+const HELP_PAGE: &str = "Lada Virtual machine
+
+Usage: lv FILE [OPTIONS]
+  -h, --help\tprint this page
+  -d\t\trun in debug mode
+  -D\t\trun in step debug mode
+  -f\t\tprint stack values as floating point
+  -b\t\tprint stack values as hexadecimal";
+
 fn main() -> ExitCode {
     let prog;
     let mut stack_cap: usize = 32;
@@ -11,8 +20,13 @@ fn main() -> ExitCode {
     {// arg parsing - no need to hold the copied string in mem
         let args: Vec<_> = std::env::args().collect();
         if args.len() < 2 {
-            eprintln!("Not enough arguments:\n./lv <source.lb> optional: <stack capacity> -d (debug) -f (print stack as floats)");
+            eprintln!("Not enough arguments:\nlv <source.lb> or lv --help for more information");
             return 1.into();
+        }
+
+        if args[1] == "--help" || args[1] == "-h" {
+            println!("{HELP_PAGE}");
+            return 0.into();
         }
 
         let source: String = args[1].clone();
@@ -28,7 +42,7 @@ fn main() -> ExitCode {
             if args[i] == "-d" {debug=true}
             else if args[i] == "-D" {debug=true;debug_step=true}
             else if args[i] == "-f" {print_type = PrintType::F64}
-            else if args[i] == "-h" {print_type = PrintType::HEX}
+            else if args[i] == "-b" {print_type = PrintType::HEX}
             else {
                 stack_cap = match args[i].parse::<usize>() {
                     Ok(v) => v,

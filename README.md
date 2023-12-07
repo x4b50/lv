@@ -42,6 +42,11 @@ Example program calculating eulers number
 ./src/examples/euler.sh
 ```
 
+Example program with a variadic function
+```sh
+./src/examples/variadics.sh
+```
+
 ## Writing programs
 ``` nasm
 start:      ;create a label
@@ -93,14 +98,15 @@ halt        ;stops the execution
 - [x] add bitwise instructions
 - [x] add subroutines
 - [ ] add access functions of vm instead of pub
-- [ ] add heap w/ pointers on the stack
+- [ ] add heap w/ pointers on the stack - predefined native inst (ex. malloc) + including linux/windows ...
 - [ ] add comments in some places
 - [x] use macros to reduce number of lines (there are technically still some)
 - [x] labels don't parse '_'
 - [ ] add more tests
+- [x] add --help
 - [x] compiler might not give errors on pushing not defined constants/labels
 - [x] make push the only inst w/ operand
-- [ ] do label/const substitution while parsing instructions
+- [x] do label/const substitution while parsing instructions
 - [ ] use split_whitespace() while parsing
 - [ ] make two type of instruction struct to save space on unused operands (indicate if contains operand to make file parsing possible)
 - [ ] use from_bites for vector conversion
