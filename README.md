@@ -89,8 +89,7 @@ halt        ;stops the execution
 - [ ] crash on redefined labels
 - [ ] include files https://www.youtube.com/watch?v=k6qk6lT4S3U ~2:00:00+
 - [ ] use split_whitespace() while parsing
-- [ ] make two type of instruction struct to save space on unused operands (indicate if contains operand to make file parsing possible)
-- [ ] use from_bites for vector conversion
+- [x] use from_bites for vector conversion
 - [ ] (technical regarding implementation) use f64::from_bites and the like, keep track of changes in implementation in respect to std::mem::trasmute
 - [ ] some refactoring regarding instruction storage/parsing https://www.youtube.com/watch?v=LN9vrbBNG64 ~1:50:00
 - [ ] reduce inst size (dynamic interpretation)
