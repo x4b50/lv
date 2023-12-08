@@ -88,7 +88,7 @@ So far implementation is finished on ~ day 6
 - [x] compiler might not give errors on pushing not defined constants/labels
 - [x] make push the only inst w/ operand
 - [x] do label/const substitution while parsing instructions
-- [ ] crash on redefined labels
+- [x] crash on redefined labels
 - [ ] include files https://www.youtube.com/watch?v=k6qk6lT4S3U ~2:00:00+
 - [ ] use split_whitespace() while parsing
 - [ ] casting instead of transmuting isize <-> usize *might* cause problems

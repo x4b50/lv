@@ -110,6 +110,7 @@ pub enum ExecErr {
     IllegalAddr,
     IllegalInstAddr,
     IllegalOperand,
+    Redefinition,
 }
 
 pub enum PrintType {
@@ -552,13 +553,13 @@ pub mod file {
         }
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     struct Label<'a> {
         name: &'a str,
         addr: usize
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     struct Constant<'a> {
         name: &'a str,
         value: isize
@@ -605,16 +606,25 @@ pub mod file {
                         }
                         label_count += 1;
                     }
-                    label_vec.push(Label {
+                    let label = Label {
                         name: &line[char_count-label_count..char_count],
                         addr: inst_num as usize
-                    });
+                    };
+
+                    for lbl in &label_vec {
+                        if lbl.name == label.name {
+                            eprintln!("Redefined label");
+                            return Err((ExecErr::Redefinition, line_count));
+                        }
+                    }
+                    label_vec.push(label);
+
                     (_,line) = line.split_at(char_count+1);
                     break;
                 }
                 char_count += 1
             }
-            
+
             char_count = 0;
             for char in line.chars() {
                 if char != ' ' {
@@ -630,17 +640,24 @@ pub mod file {
                     if char == ' ' {
                         let (const_name, mut value) = line.split_at(char_count);
                         (_,value) = value.split_at(1);
-                        const_vec.push(Constant{
+                        // const_vec.push(
+                        let constant = Constant{
                             name: const_name,
-                            value: if let Ok(v) = value.parse::<isize>() {
-                                v
-                            } else if let Ok(v) = value.parse::<f64>() {
-                                unsafe {transmute::<f64, isize>(v)}
-                            } else {
+                            value: if let Ok(v) = value.parse::<isize>() {v} 
+                            else if let Ok(v) = value.parse::<f64>() {unsafe {transmute::<f64, isize>(v)}}
+                            else {
                                 eprintln!("Invalid argument in macro definition");
                                 return Err((ExecErr::IllegalOperand, line_count));
                             }
-                        });
+                        };
+
+                        for cst in &const_vec {
+                            if cst.name == constant.name {
+                                eprintln!("Redefined constant");
+                                return Err((ExecErr::Redefinition, line_count));
+                            }
+                        }
+                        const_vec.push(constant);
                         line = "";
                         break;
                     }
