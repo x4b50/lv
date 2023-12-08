@@ -54,6 +54,7 @@ pub struct Inst {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InstType {
+    HALT,
     NOP,
     PUSH,
     POP,
@@ -96,7 +97,6 @@ pub enum InstType {
     ITOF,
     FLOOR,
     CEIL,
-    HALT,
 }
 
 #[derive(Debug)]
@@ -490,7 +490,6 @@ impl fmt::Display for Inst {
     }
 }
 
-//const INST_BYTES: usize = size_of::<Inst>()/size_of::<u8>();
 pub mod file {
     use std::{fs, mem::size_of};
     use super::*;
@@ -672,8 +671,9 @@ pub mod file {
             let operand = entry.1;
             let inst_n = entry.2;
             let line = entry.3;
+            // this could be collapsed a bunch
+            // todo: with a macro create an associated array/hashmap of "name" -> InstType
             inst_vec.push(
-                // this could be collapsed a bunch
                 match inst {
                     "nop" => {no_op_err!(operand, line); inst!(NOP)}
                     "push" => {
