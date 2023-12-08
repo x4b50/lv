@@ -496,25 +496,34 @@ pub mod file {
     use super::*;
 
     pub fn read_prog_from_file(source: &str) -> std::io::Result<Vec<Inst>> {
+        assert!(size_of::<InstType>() == size_of::<u8>(), "InstType is no longer 8bits long");
         let buff = fs::read(source)?;
-        // assertion that the file has the right length
-        assert!(buff.len()%size_of::<Inst>()==0);
-        let len = size_of::<Inst>()/size_of::<u8>();
-        let n = buff.len()/len;
+        let mut prog: Vec<Inst> = vec![];
 
-        let prog_slice = &buff[0..n];
-        let prog = unsafe {
-            // TODO: use that
-            // f64::from_ne_bytes()
-            &*(prog_slice as *const [_] as *const [Inst])
-        };
-        Ok(prog.to_vec())
+        let mut i = 0;
+        while i < buff.len() {
+            let mut operand = None;
+            let inst_type: InstType = unsafe {transmute(buff[i])};
+            i += 1;
+
+            if let InstType::PUSH | InstType::JMP | InstType::JIF = inst_type {
+                assert!(i+7 < buff.len(), "Corrupted file");
+                operand = Some(isize::from_ne_bytes(buff[i..i+8].try_into().unwrap())); //todo: i don't like how it looks
+                i += 8;
+            }
+
+            match operand {
+                None =>     prog.push(Inst { kind: (inst_type, false), operand: 0 }),
+                Some(op) => prog.push(Inst { kind: (inst_type, true), operand: op })
+            }
+        }
+
+        Ok(prog)
     }
 
     pub fn dump_prog_to_file(prog: &Vec<Inst>, dest: &str) -> std::io::Result<()> {
-        // let _ = std::fs::remove_file(dest);
+        assert!(size_of::<InstType>() == size_of::<u8>(), "InstType is no longer 8bits long");
         std::fs::File::create(dest)?;
-
         match fs::OpenOptions::new().write(true).open(dest) {
             Ok(_) => {}
             Err(e) => {
@@ -524,22 +533,24 @@ pub mod file {
         }
 
         let mut f_buff: Vec<u8> = vec![];
-
         for inst in prog {
-            let bytes = unsafe {transmute::<Inst, [u8;16]>(inst.clone())};
-            for byte in bytes {
-                f_buff.push(byte);
+            let byte: &u8 = unsafe {transmute(&inst.kind.0)};
+            f_buff.push(*byte);
+
+            if let InstType::PUSH | InstType::JMP | InstType::JIF = inst.kind.0 {
+                for byte in inst.operand.to_ne_bytes() {
+                    f_buff.push(byte);
+                }
             }
         }
         
         match fs::write(dest, &f_buff) {
-            Ok(_) => {}
+            Ok(_) => {Ok(())}
             Err(e) => {
-                println!("Error writing to a file {dest}: {e}");
+                eprintln!("Error writing to a file {dest}: {e}");
                 return Err(e);
             }
-        };
-        Ok(())
+        }
     }
 
     #[derive(Debug)]

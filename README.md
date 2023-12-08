@@ -94,8 +94,8 @@ So far implementation is finished on ~ day 6
 - [ ] casting instead of transmuting isize <-> usize *might* cause problems
 - [x] use from_bites for vector conversion
 - [ ] some refactoring regarding instruction storage/parsing https://www.youtube.com/watch?v=LN9vrbBNG64 ~1:50:00
-- [ ] reduce inst size (dynamic interpretation)
-- [ ] bake bytecode dynamic
+- [x] reduce inst size (dynamic interpretation)
+- [ ] make bytecode dynamic
 - [ ] experiment with stack allocated inst vec
 - [ ] implement the language
 - might change the executable names
