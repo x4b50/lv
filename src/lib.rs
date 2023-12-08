@@ -39,11 +39,11 @@ pub mod inst_macro {
 
 #[derive(Debug)]
 pub struct Lada {
-    pub halted: bool,
-    pub ip: usize,
+    halted: bool,
+    ip: usize,
     stack: Vec<isize>,
     stack_size: usize,
-    pub program: Vec<Inst>,
+    program: Vec<Inst>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -127,6 +127,11 @@ impl Lada {
             program
         }
     }
+
+    pub fn ip(&self) -> usize {self.ip}
+    pub fn halted(&self) -> bool {self.halted}
+    pub fn inst(&self, n: usize) -> Inst {self.program[n].clone()}
+    pub fn prog_len(&self) -> usize {self.program.len()}
 
     pub fn stack_print(&self, t: &PrintType) {
         print!("[");
@@ -468,9 +473,9 @@ impl Inst {
             let str = format!("{}", self);
             let (inst, op) = str.split_at(format!("{}", self).find(' ').unwrap());
             let inst = inst.to_lowercase();
-            format!("{inst}{op}\n")
+            format!("{inst}{op}")
         } else {
-            format!("{}\n", format!("{}", self).to_lowercase())
+            format!("{}", format!("{}", self).to_lowercase())
         }
     }
 }

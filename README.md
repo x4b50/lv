@@ -77,7 +77,6 @@ halt        ;stops the execution
 - [x] make floats work
 - [x] add bitwise instructions
 - [x] add subroutines
-- [ ] add access functions of vm instead of pub
 - [ ] add heap w/ pointers on the stack - predefined native inst (ex. malloc) + including linux/windows ...
 - [ ] add comments in some places
 - [x] use macros to reduce number of lines (there are technically still some)

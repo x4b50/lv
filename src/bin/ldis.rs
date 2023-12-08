@@ -22,6 +22,8 @@ fn main() -> ExitCode {
         for char in inst.to_string().chars() {
             prog_str.push(char as u8);
         }
+        prog_str.push(b'\\');
+        prog_str.push(b'n');
     }
 
     match io::stdout().write_all(&prog_str){
