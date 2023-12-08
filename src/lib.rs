@@ -81,9 +81,9 @@ pub enum InstType {
     JMP,
     JIF,
     EQ,
+    NEG,
     LT,
     GT,
-    EQF,
     LTF,
     GTF,
     PRINT,
@@ -188,9 +188,6 @@ impl Lada {
             }
 
             InstType::PICK => {
-                if self.stack_size >= self.stack.len() {
-                    return Err(ExecErr::StackOverflow)
-                }
                 if self.stack[self.stack_size-1] < 0 || self.stack[self.stack_size-1] >= self.stack_size as isize {
                     return Err(ExecErr::IllegalAddr);
                 }
@@ -346,6 +343,13 @@ impl Lada {
                 self.stack_size -= 1;
             }
 
+            InstType::NEG => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                self.stack[self.stack_size-1] = !(self.stack[self.stack_size-1] > 0) as isize;
+            }
+
             InstType::LT => {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
@@ -359,14 +363,6 @@ impl Lada {
                     return Err(ExecErr::StackUnderflow)
                 }
                 self.stack[self.stack_size-2] = (self.stack[self.stack_size-2] > self.stack[self.stack_size-1]) as isize;
-                self.stack_size -= 1;
-            }
-
-            InstType::EQF => {
-                if self.stack_size < 2 {
-                    return Err(ExecErr::StackUnderflow)
-                }
-                f64_bool!(self.stack[self.stack_size-2], ==, self.stack[self.stack_size-1]);
                 self.stack_size -= 1;
             }
 
@@ -732,9 +728,9 @@ pub mod file {
                     }
 
                     "eq" => {no_op_err!(operand, line); inst!(EQ)}
+                    "neg"=> {no_op_err!(operand, line); inst!(NEG)}
                     "lt" => {no_op_err!(operand, line); inst!(LT)}
                     "gt" => {no_op_err!(operand, line); inst!(GT)}
-                    "eqf"=> {no_op_err!(operand, line); inst!(EQF)}
                     "ltf"=> {no_op_err!(operand, line); inst!(LTF)}
                     "gtf"=> {no_op_err!(operand, line); inst!(GTF)}
                     "print" | "." => {no_op_err!(operand, line); inst!(PRINT)}

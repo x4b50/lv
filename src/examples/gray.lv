@@ -1,0 +1,24 @@
+jmp main
+
+%count 10
+
+; n in gray code
+; i ^ (i>>1)
+
+main:
+    push 0
+loop:
+    dup
+    dup
+    push 1
+    shr
+    xor
+    shout
+    push 1
+    add
+    dup
+    push %count
+    eq
+    neg
+    jif loop
+halt

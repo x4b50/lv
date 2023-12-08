@@ -21,6 +21,7 @@ cargo build -r
 ./src/examples/fib_term.sh
 ./src/examples/float.sh
 ./src/examples/bitwise.sh
+./src/examples/gray.sh
 ./src/examples/euler.sh
 ./src/examples/variadics.sh
 ```
@@ -90,7 +91,6 @@ halt        ;stops the execution
 - [ ] include files https://www.youtube.com/watch?v=k6qk6lT4S3U ~2:00:00+
 - [ ] use split_whitespace() while parsing
 - [x] use from_bites for vector conversion
-- [ ] (technical regarding implementation) use f64::from_bites and the like, keep track of changes in implementation in respect to std::mem::trasmute
 - [ ] some refactoring regarding instruction storage/parsing https://www.youtube.com/watch?v=LN9vrbBNG64 ~1:50:00
 - [ ] reduce inst size (dynamic interpretation)
 - [ ] bake bytecode dynamic
