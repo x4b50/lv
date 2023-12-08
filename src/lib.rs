@@ -26,13 +26,13 @@ pub mod inst_macro {
     #[macro_export]
     macro_rules! inst {
         ($type:ident) => {
-            Inst { kind: (InstType::$type, false), operand: 0}
+            Inst { kind: InstType::$type, has_op: false, operand: 0}
         };
     }
     #[macro_export]
     macro_rules! inst_op {
         ($type:ident, $op:expr) => {
-            Inst { kind: (InstType::$type, true), operand: $op}
+            Inst { kind: InstType::$type, has_op: true, operand: $op}
         };
     }
 }
@@ -48,7 +48,8 @@ pub struct Lada {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Inst {
-    pub kind: (InstType, bool),
+    pub kind: InstType,
+    pub has_op: bool,
     pub operand: isize
 }
 
@@ -164,7 +165,7 @@ impl Lada {
         }
 
         let inst = &self.program[self.ip];
-        match inst.kind.0 {
+        match inst.kind {
             InstType::NOP => {}
             InstType::PUSH => {
                 if self.stack_size >= self.stack.len() {
@@ -469,7 +470,7 @@ impl Lada {
 
 impl Inst {
     pub fn to_string(&self) -> String {
-        if self.kind.1 {
+        if self.has_op {
             let str = format!("{}", self);
             let (inst, op) = str.split_at(format!("{}", self).find(' ').unwrap());
             let inst = inst.to_lowercase();
@@ -482,10 +483,10 @@ impl Inst {
 
 impl fmt::Display for Inst {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.kind.1 {
-            write!(f, "{:?} {}", self.kind.0, self.operand)
+        if self.has_op {
+            write!(f, "{:?} {}", self.kind, self.operand)
         } else {
-            write!(f, "{:?}", self.kind.0)
+            write!(f, "{:?}", self.kind)
         }
     }
 }
@@ -512,11 +513,10 @@ pub mod file {
             }
 
             match operand {
-                None =>     prog.push(Inst { kind: (inst_type, false), operand: 0 }),
-                Some(op) => prog.push(Inst { kind: (inst_type, true), operand: op })
+                None =>     prog.push(Inst { kind: inst_type, has_op: false, operand: 0 }),
+                Some(op) => prog.push(Inst { kind: inst_type, has_op: true, operand: op })
             }
         }
-
         Ok(prog)
     }
 
@@ -533,10 +533,10 @@ pub mod file {
 
         let mut f_buff: Vec<u8> = vec![];
         for inst in prog {
-            let byte: &u8 = unsafe {transmute(&inst.kind.0)};
+            let byte: &u8 = unsafe {transmute(&inst.kind)};
             f_buff.push(*byte);
 
-            if let InstType::PUSH | InstType::JMP | InstType::JIF = inst.kind.0 {
+            if let InstType::PUSH | InstType::JMP | InstType::JIF = inst.kind {
                 for byte in inst.operand.to_ne_bytes() {
                     f_buff.push(byte);
                 }
@@ -553,14 +553,14 @@ pub mod file {
     }
 
     #[derive(Debug)]
-    struct Label {
-        name: String,
+    struct Label<'a> {
+        name: &'a str,
         addr: usize
     }
 
     #[derive(Debug)]
-    struct Constant {
-        name: String,
+    struct Constant<'a> {
+        name: &'a str,
         value: isize
     }
 
@@ -606,7 +606,7 @@ pub mod file {
                         label_count += 1;
                     }
                     label_vec.push(Label {
-                        name: line[char_count-label_count..char_count].to_string(),
+                        name: &line[char_count-label_count..char_count],
                         addr: inst_num as usize
                     });
                     (_,line) = line.split_at(char_count+1);
@@ -631,7 +631,7 @@ pub mod file {
                         let (const_name, mut value) = line.split_at(char_count);
                         (_,value) = value.split_at(1);
                         const_vec.push(Constant{
-                            name: const_name.to_string(),
+                            name: const_name,
                             value: if let Ok(v) = value.parse::<isize>() {
                                 v
                             } else if let Ok(v) = value.parse::<f64>() {
@@ -756,11 +756,10 @@ pub mod file {
                     "ifempty"=> {no_op_err!(operand, line); inst!(IFEMPTY)}
                     "ret"  => {no_op_err!(operand, line); inst!(RET)}
                     "ftoi" => {no_op_err!(operand, line);
-                        if inst_vec[inst_n as usize-1].clone() != inst!(CEIL)
-                        && inst_vec[inst_n as usize-1].clone() != inst!(FLOOR) {
+                        if inst_vec[inst_n as usize-1] != inst!(CEIL)
+                        && inst_vec[inst_n as usize-1] != inst!(FLOOR) {
                             eprintln!("WANRING: It is recomended to use 'ceil' or 'floor' before casting to integer");
-                        } // for some reason it doesn't work w/out clone
-                        inst!(FTOI)
+                        } inst!(FTOI)
                     }
                     "itof" => {no_op_err!(operand, line); inst!(ITOF)}
                     "floor"=> {no_op_err!(operand, line); inst!(FLOOR)}
