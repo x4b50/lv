@@ -21,7 +21,7 @@ fn main() -> ExitCode {
     // for i in 2..args.len() {
     // }
 
-    let mut prog = match asm_parse(&source) {
+    let prog = match asm_parse(&source) {
         Ok(p) => p,
         Err((e,n)) => {
             eprintln!("Error on line {}: {:?}", n, e);
@@ -29,7 +29,7 @@ fn main() -> ExitCode {
         }
     };
 
-    match dump_prog_to_file(&mut prog, &args[2]) {
+    match dump_prog_to_file(&prog, &args[2]) {
         Ok(_) => {}
         Err(e) => {
             eprint!("Error writing to file: {e}");

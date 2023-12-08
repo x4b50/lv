@@ -489,6 +489,7 @@ impl fmt::Display for Inst {
     }
 }
 
+//const INST_BYTES: usize = size_of::<Inst>()/size_of::<u8>();
 pub mod file {
     use std::{fs, mem::size_of};
     use super::*;
@@ -509,7 +510,7 @@ pub mod file {
         Ok(prog.to_vec())
     }
 
-    pub fn dump_prog_to_file(prog: &mut Vec<Inst>, dest: &str) -> std::io::Result<()> {
+    pub fn dump_prog_to_file(prog: &Vec<Inst>, dest: &str) -> std::io::Result<()> {
         // let _ = std::fs::remove_file(dest);
         std::fs::File::create(dest)?;
 
@@ -522,25 +523,14 @@ pub mod file {
         }
 
         let mut f_buff: Vec<u8> = vec![];
-        let len = size_of::<Inst>()/size_of::<u8>();
-        let n = prog.len();
 
-        for _ in 0..len {
-            prog.push(inst!(HALT));
-        }
-        for i in 0..n {
-            let prog_slice = &prog[i..i+len];
-            let buff = unsafe {
-                &*(prog_slice as *const [_] as *const [u8])
-            };
-            for j in 0..len {
-                f_buff.push(buff[j]);
+        for inst in prog {
+            let bytes = unsafe {transmute::<Inst, [u8;16]>(inst.clone())};
+            for byte in bytes {
+                f_buff.push(byte);
             }
         }
-        for _ in 0..len {
-            prog.pop();
-        }
-
+        
         match fs::write(dest, &f_buff) {
             Ok(_) => {}
             Err(e) => {
