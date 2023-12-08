@@ -50,9 +50,9 @@ jmp 10      ;jump to instruction numer 10 (0 based)
 jmpif 2     ;or jif - jump to instruction numer 2 if check was true
 jmp start   ;jmp to 'start' label
 eq          ;check if two values at the top are equal substitutes them with the result
-neq         ;check if two values are not equal
 gt          ;check if the value below is greater than the one on top
 lt          ;opposite of gt
+neg         ;negate the bool value
 print       ;or . - print the value at the top of the stack (doesn't pop it)
 shout       ;prints and pops
 dump        ;prints the entire stack
@@ -65,6 +65,8 @@ floor       ;floor float
 ceil        ;ceil float
 halt        ;stops the execution
 ```
+
+So far implementation is finished on ~ day 6
 
 ## TODO
 - [x] implement the instruction set
@@ -89,6 +91,7 @@ halt        ;stops the execution
 - [ ] crash on redefined labels
 - [ ] include files https://www.youtube.com/watch?v=k6qk6lT4S3U ~2:00:00+
 - [ ] use split_whitespace() while parsing
+- [ ] casting instead of transmuting isize <-> usize *might* cause problems
 - [x] use from_bites for vector conversion
 - [ ] some refactoring regarding instruction storage/parsing https://www.youtube.com/watch?v=LN9vrbBNG64 ~1:50:00
 - [ ] reduce inst size (dynamic interpretation)
