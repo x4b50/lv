@@ -1,4 +1,5 @@
-// #[allow(dead_code)]
+#[cfg(target_os = "linux")]
+pub mod linux;
 #[cfg(test)]
 mod tests;
 use core::fmt;
@@ -40,8 +41,8 @@ pub mod inst_macro {
 pub struct Lada {
     halted: bool,
     ip: usize,
-    stack: Vec<isize>,
     stack_size: usize,
+    stack: Vec<isize>,
     pub arena: Vec<u8>,
     program: Vec<Inst>,
 }
@@ -125,13 +126,15 @@ pub enum PrintType {
     HEX
 }
 
+type Native = fn(&mut Lada, &[isize]) -> Result<(), ExecErr>;
+
 impl Lada {
     pub fn init(program: Vec<Inst>, stack_cap: usize, arena_size: usize) -> Lada {
         Lada {
             halted: false,
             ip: 0,
-            stack: vec![0; stack_cap],
             stack_size: 0,
+            stack: vec![0; stack_cap],
             arena: vec![0; arena_size],
             program,
         }
@@ -139,10 +142,16 @@ impl Lada {
 
     pub fn ip(&self) -> usize {self.ip}
     pub fn halted(&self) -> bool {self.halted}
-    pub fn inst(&self, n: usize) -> Inst {self.program[n].clone()}
+    pub fn inst(&self, n: usize) -> &Inst {&self.program[n]}
     pub fn prog_len(&self) -> usize {self.program.len()}
 
-    pub fn stack_print(&self, t: &PrintType) {
+    pub fn get_stack_top(&mut self, n: usize) -> Result<Vec<isize>, ExecErr> {
+        if self.stack_size < n { return Err(ExecErr::StackUnderflow);}
+        self.stack_size -= n;
+        Ok(self.stack[self.stack_size..self.stack_size+n].to_vec())
+    }
+
+    pub fn print_stack(&self, t: &PrintType) {
         print!("[");
         if self.stack_size == 0 {
             println!("]");
@@ -416,7 +425,7 @@ impl Lada {
                     return Err(ExecErr::StackUnderflow)
                 }
                 print!("Stack: ");
-                self.stack_print(&print_type);
+                self.print_stack(&print_type);
             }
 
             InstType::EMPTY => {
@@ -580,7 +589,7 @@ impl fmt::Debug for Lada {
         write!(f, " ]\n")?;
         write!(f, "stack size: {}\n", self.stack_size)?;
         write!(f, "stack used: ")?;
-        self.stack_print(&PrintType::I64);
+        self.print_stack(&PrintType::I64);
         write!(f, "stack full: {:?}\n", self.stack)?;
         write!(f, "arena: {:?}", self.arena)?;
         write!(f, " }}")?;
