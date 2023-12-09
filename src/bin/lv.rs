@@ -110,11 +110,5 @@ fn main() -> ExitCode {
         }
     }
 
-// #[cfg(target_os = "linux")]
-    // {
-        // let args = vm.get_stack_top(2).unwrap();
-        // let _ = vm.native(0, &args);
-    // }
-
     0.into()
 }

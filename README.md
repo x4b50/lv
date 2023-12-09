@@ -30,6 +30,7 @@ cargo build -r
 ./src/examples/euler.sh
 ./src/examples/variadics.sh
 ./src/examples/arena.sh
+./src/examples/native.sh
 ```
 
 ## Writing programs
@@ -78,6 +79,7 @@ read8       ;read 8 bits from arena adress specified by top of the stack
 read16      ;same but 16 bits
 read32      ;same but 32 bits
 read64      ;same but 64 bits
+native      ;calls native function with index from the top of the stack
 ```
 
 So far implementation is finished on ~ day 6
@@ -96,6 +98,8 @@ So far implementation is finished on ~ day 6
 - [x] add heap w/ pointers on the stack
 - [ ] possibly add malloc and free
 - [x] add native instructions
+- [x] add hex literals
+- [ ] add string literals
 - [ ] add comments in some places
 - [x] use macros to reduce number of lines (there are technically still some)
 - [x] labels don't parse '_'

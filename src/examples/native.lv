@@ -1,0 +1,76 @@
+; "Hello Wolrd" example implemented with native functions
+; native functions aren't a built-in way to comunicate with the system, but
+; a customisable way to provide interaction with the world outside the vm
+
+byte_by_byte:
+    push 72     ;H
+    push 0
+    write8
+    push 101    ;e
+    push 1
+    write8
+    push 108    ;l
+    push 2
+    write8
+    push 108    ;l
+    push 3
+    write8
+    push 111    ;o
+    push 4
+    write8
+    push 32     ;space
+    push 5
+    write8
+    push 87     ;W
+    push 6
+    write8
+    push 111    ;o
+    push 7
+    write8
+    push 114    ;r
+    push 8
+    write8
+    push 108    ;l
+    push 9
+    write8
+    push 100    ;d
+    push 10
+    write8
+
+    push 0
+    push 11
+    push 1
+    native
+
+encoded:
+    ; "Hello world!" encoded as 3 32bit values
+    push 1819043144
+    push 0
+    write32
+    push 1870078063
+    push 4
+    write32
+    push 560229490
+    push 8
+    write32
+
+    push 0
+    push 12
+    push 1
+    native
+
+    push 0x6c6c6548
+    push 0
+    write32
+    push 0x6f77206f
+    push 4
+    write32
+    push 0x21646c72
+    push 8
+    write32
+
+    push 0
+    push 12
+    push 1
+    native
+halt

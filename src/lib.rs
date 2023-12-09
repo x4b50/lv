@@ -104,6 +104,7 @@ pub enum InstType {
     WRITE_16,
     WRITE_32,
     WRITE_64,
+    NATIVE,
 }
 
 #[derive(Debug)]
@@ -118,6 +119,7 @@ pub enum ExecErr {
     IllegalOperand,
     Redefinition,
     IllegalMemAccess,
+    NativeError,
 }
 
 pub enum PrintType {
@@ -126,7 +128,7 @@ pub enum PrintType {
     HEX
 }
 
-type Native = fn(&mut Lada, &[isize]) -> Result<(), ExecErr>;
+type Native = fn(&mut Lada) -> Result<(), ExecErr>;
 
 impl Lada {
     pub fn init(program: Vec<Inst>, stack_cap: usize, arena_size: usize) -> Lada {
@@ -145,11 +147,11 @@ impl Lada {
     pub fn inst(&self, n: usize) -> &Inst {&self.program[n]}
     pub fn prog_len(&self) -> usize {self.program.len()}
 
-    pub fn get_stack_top(&mut self, n: usize) -> Result<Vec<isize>, ExecErr> {
-        if self.stack_size < n { return Err(ExecErr::StackUnderflow);}
-        self.stack_size -= n;
-        Ok(self.stack[self.stack_size..self.stack_size+n].to_vec())
-    }
+    // pub fn get_stack_top(&mut self, n: usize) -> Result<Vec<isize>, ExecErr> {
+        // if self.stack_size < n { return Err(ExecErr::StackUnderflow);}
+        // self.stack_size -= n;
+        // Ok(self.stack[self.stack_size..self.stack_size+n].to_vec())
+    // }
 
     pub fn get_arena(&self) -> &[u8] {
         &self.arena
@@ -571,6 +573,18 @@ impl Lada {
                 self.stack_size -= 2;
             }
 
+            InstType::NATIVE => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow);
+                }
+                self.stack_size -= 1;
+                #[cfg(target_os = "linux")]
+                match self.native(self.stack[self.stack_size] as usize) {
+                    Ok(_) => {}
+                    Err(e) => return Err(e)
+                }
+            }
+
             InstType::HALT => self.halted = true
         }
 
@@ -668,7 +682,7 @@ pub mod file {
             let byte: &u8 = unsafe {transmute(&inst.kind)};
             f_buff.push(*byte);
 
-            if let InstType::PUSH | InstType::JMP | InstType::JIF = inst.kind {
+            if inst.has_op {
                 for byte in inst.operand.to_ne_bytes() {
                     f_buff.push(byte);
                 }
@@ -773,6 +787,7 @@ pub mod file {
                         let constant = Constant{
                             name: const_name,
                             value: if let Ok(v) = value.parse::<isize>() {v} 
+                            else if let Ok(v) = isize::from_str_radix(operand.trim_start_matches("0x"), 16) {v}
                             else if let Ok(v) = value.parse::<f64>() {unsafe {transmute::<f64, isize>(v)}}
                             else {
                                 eprintln!("Invalid argument in macro definition");
@@ -824,6 +839,8 @@ pub mod file {
                     "nop" => {no_op_err!(operand, line); inst!(NOP)}
                     "push" => {
                         if let Ok(op) = operand.parse::<isize>() {
+                            inst_op!(PUSH, op)
+                        } else if let Ok(op) = isize::from_str_radix(operand.trim_start_matches("0x"), 16) {
                             inst_op!(PUSH, op)
                         } else if let Ok(op) = operand.parse::<f64>() {
                             inst_op!(PUSH, unsafe {transmute::<f64, isize>(op)})
@@ -918,6 +935,7 @@ pub mod file {
                     "write16" => {no_op_err!(operand, line); inst!(WRITE_16)}
                     "write32" => {no_op_err!(operand, line); inst!(WRITE_32)}
                     "write64" => {no_op_err!(operand, line); inst!(WRITE_64)}
+                    "native" => {no_op_err!(operand, line); inst!(NATIVE)}
 
                     "halt" => {no_op_err!(operand, line); inst!(HALT)}
                     &_ => {
