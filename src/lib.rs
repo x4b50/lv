@@ -146,16 +146,7 @@ impl Lada {
     pub fn halted(&self) -> bool {self.halted}
     pub fn inst(&self, n: usize) -> &Inst {&self.program[n]}
     pub fn prog_len(&self) -> usize {self.program.len()}
-
-    // pub fn get_stack_top(&mut self, n: usize) -> Result<Vec<isize>, ExecErr> {
-        // if self.stack_size < n { return Err(ExecErr::StackUnderflow);}
-        // self.stack_size -= n;
-        // Ok(self.stack[self.stack_size..self.stack_size+n].to_vec())
-    // }
-
-    pub fn get_arena(&self) -> &[u8] {
-        &self.arena
-    }
+    pub fn get_arena(&self) -> &[u8] {&self.arena}
 
     pub fn print_stack(&self, t: &PrintType) {
         print!("[");

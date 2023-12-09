@@ -59,6 +59,7 @@ encoded:
     push 1
     native
 
+encoded_hex:
     push 0x6c6c6548
     push 0
     write32

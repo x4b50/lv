@@ -79,7 +79,7 @@ read8       ;read 8 bits from arena adress specified by top of the stack
 read16      ;same but 16 bits
 read32      ;same but 32 bits
 read64      ;same but 64 bits
-native      ;calls native function with index from the top of the stack
+native      ;calls native function with the index at the top of the stack
 ```
 
 So far implementation is finished on ~ day 6
@@ -114,7 +114,6 @@ So far implementation is finished on ~ day 6
 - [x] use from_bites for vector conversion
 - [ ] some refactoring regarding instruction storage/parsing https://www.youtube.com/watch?v=LN9vrbBNG64 ~1:50:00
 - [x] reduce inst size (dynamic interpretation)
-- [ ] make bytecode dynamic
 - [ ] experiment with stack allocated inst vec
 - [ ] implement the language
 - might change the executable names
