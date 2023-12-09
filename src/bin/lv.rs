@@ -7,10 +7,11 @@ Usage: lv FILE [OPTIONS]
   -h, --help\tprint this page
   -d\t\trun in debug mode
   -D\t\trun in step debug mode
+  -A\t\tdebug arena memory
   -s [size]\tset stack size
   -a [size]\tset arena size
   -f\t\tprint stack values as floating point
-  -b\t\tprint stack values as hexadecimal";
+  -b\t\tprint values (stack & arena) as hexadecimal";
 
 fn main() -> ExitCode {
     let prog;
@@ -18,6 +19,7 @@ fn main() -> ExitCode {
     let mut arena_size: usize = 128;
     let mut debug = false;
     let mut debug_step = false;
+    let mut debug_arena = false;
     let mut print_type = PrintType::I64;
 
     {// arg parsing - no need to hold the copied string in mem
@@ -45,6 +47,7 @@ fn main() -> ExitCode {
         while i < args.len() {
             if args[i] == "-d" {debug=true}
             else if args[i] == "-D" {debug=true;debug_step=true}
+            else if args[i] == "-A" {debug_arena=true}
             else if args[i] == "-f" {print_type = PrintType::F64}
             else if args[i] == "-b" {print_type = PrintType::HEX}
             else if args[i] == "-s" {
@@ -81,9 +84,13 @@ fn main() -> ExitCode {
     while !vm.halted() {
         match vm.exec_inst(&print_type) {
             Ok(_) => {
-                if debug {
-                    print!("Inst: {}: {}    \t", ip, vm.inst(ip));
-                    vm.stack_print(&print_type);
+                if debug || debug_arena {print!("Inst: {}: {}    \t", ip, vm.inst(ip));}
+                if debug {vm.print_stack(&print_type);}
+                if debug_arena {print!("Arena memory: ");
+                    match print_type {
+                        PrintType::I64 => {println!("{:?}",  vm.arena);}
+                        _ => {println!("{:x?}", vm.arena);}
+                    }
                 }
                 if debug_step {
                     let mut s= String::new();
@@ -103,14 +110,11 @@ fn main() -> ExitCode {
         }
     }
 
-    if debug {
-        print!("Arena memory: ");
-        match print_type {
-            PrintType::I64 => {println!("{:?}", vm.arena);}
-            PrintType::F64 => {println!("{:x?}", vm.arena);}
-            PrintType::HEX => {println!("{:x?}", vm.arena);}
-        }
-    }
+// #[cfg(target_os = "linux")]
+    // {
+        // let args = vm.get_stack_top(2).unwrap();
+        // let _ = vm.native(0, &args);
+    // }
 
     0.into()
 }
