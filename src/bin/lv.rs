@@ -88,8 +88,8 @@ fn main() -> ExitCode {
                 if debug {vm.print_stack(&print_type);}
                 if debug_arena {print!("Arena memory: ");
                     match print_type {
-                        PrintType::I64 => {println!("{:?}",  vm.arena);}
-                        _ => {println!("{:x?}", vm.arena);}
+                        PrintType::I64 => {println!("{:?}",  vm.get_arena());}
+                        _ => {println!("{:x?}", vm.get_arena());}
                     }
                 }
                 if debug_step {

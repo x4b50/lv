@@ -43,7 +43,7 @@ pub struct Lada {
     ip: usize,
     stack_size: usize,
     stack: Vec<isize>,
-    pub arena: Vec<u8>,
+    arena: Vec<u8>,
     program: Vec<Inst>,
 }
 
@@ -149,6 +149,10 @@ impl Lada {
         if self.stack_size < n { return Err(ExecErr::StackUnderflow);}
         self.stack_size -= n;
         Ok(self.stack[self.stack_size..self.stack_size+n].to_vec())
+    }
+
+    pub fn get_arena(&self) -> &[u8] {
+        &self.arena
     }
 
     pub fn print_stack(&self, t: &PrintType) {
@@ -581,7 +585,6 @@ impl fmt::Debug for Lada {
         write!(f, "Lada {{ ")?;
         write!(f, "halted: {}, ", self.halted)?;
         write!(f, "ip: {}\n", self.ip)?;
-        // write!(f, "\tprogram: {:?}\n", self.program)?;
         write!(f, "program: [\n")?;
         for inst in &self.program {
             write!(f, " {{ {inst} }}")?;
