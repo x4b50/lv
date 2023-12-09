@@ -30,4 +30,18 @@ push 6.9
 ; ceil
 ftoi
 dump
+
+push 8946425964312534017 ;a number with all bytes different
+push 248
+write64
+push 255
+read8
+push 254
+read16
+push 252
+read32
+push 248
+read64
+dump
+
 halt

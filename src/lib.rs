@@ -44,6 +44,7 @@ pub struct Lada {
     stack: Vec<isize>,
     stack_size: usize,
     program: Vec<Inst>,
+    pub arena: Vec<u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,6 +54,7 @@ pub struct Inst {
     pub operand: isize
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InstType {
     HALT,
@@ -76,10 +78,6 @@ pub enum InstType {
     OR,
     XOR,
     NOT,
-    /*
-    ptr,
-    ptrn
-    // */
     JMP,
     JIF,
     EQ,
@@ -98,6 +96,14 @@ pub enum InstType {
     ITOF,
     FLOOR,
     CEIL,
+    READ_8,
+    READ_16,
+    READ_32,
+    READ_64,
+    WRITE_8,
+    WRITE_16,
+    WRITE_32,
+    WRITE_64,
 }
 
 #[derive(Debug)]
@@ -111,6 +117,7 @@ pub enum ExecErr {
     IllegalInstAddr,
     IllegalOperand,
     Redefinition,
+    IllegalMemAccess,
 }
 
 pub enum PrintType {
@@ -120,13 +127,14 @@ pub enum PrintType {
 }
 
 impl Lada {
-    pub fn init(program: Vec<Inst>, stack_cap: usize) -> Lada {
+    pub fn init(program: Vec<Inst>, stack_cap: usize, arena_size: usize) -> Lada {
         Lada {
             ip: 0,
             halted: false,
-            stack: vec![0;stack_cap],
+            stack: vec![0; stack_cap],
             stack_size: 0,
-            program
+            program,
+            arena: vec![0; arena_size],
         }
     }
 
@@ -461,6 +469,96 @@ impl Lada {
                 self.stack[self.stack_size-1] = unsafe {transmute::<f64, isize>(transmute::<isize, f64>(self.stack[self.stack_size-1]).ceil())};
             }
 
+            InstType::READ_8 => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                if self.stack[self.stack_size-1] >= self.arena.len() as isize {
+                    return Err(ExecErr::IllegalMemAccess);
+                }
+                self.stack[self.stack_size-1] = self.arena[self.stack[self.stack_size-1]as usize] as isize;
+            }
+            InstType::READ_16 => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                if self.stack[self.stack_size-1]+1 >= self.arena.len() as isize {
+                    return Err(ExecErr::IllegalMemAccess);
+                }
+                let index = self.stack[self.stack_size-1] as usize;
+                let bytes: &[u8; 2] = &self.arena[index..index+2].try_into().unwrap();
+                self.stack[self.stack_size-1] = u16::from_ne_bytes(*bytes) as isize;
+            }
+            InstType::READ_32 => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                if self.stack[self.stack_size-1]+3 >= self.arena.len() as isize {
+                    return Err(ExecErr::IllegalMemAccess);
+                }
+                let index = self.stack[self.stack_size-1] as usize;
+                let bytes: &[u8; 4] = &self.arena[index..index+4].try_into().unwrap();
+                self.stack[self.stack_size-1] = u32::from_ne_bytes(*bytes) as isize;
+            }
+            InstType::READ_64 => {
+                if self.stack_size < 1 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                if self.stack[self.stack_size-1]+7 >= self.arena.len() as isize {
+                    return Err(ExecErr::IllegalMemAccess);
+                }
+                let index = self.stack[self.stack_size-1] as usize;
+                let bytes: &[u8; 8] = &self.arena[index..index+8].try_into().unwrap();
+                self.stack[self.stack_size-1] = isize::from_ne_bytes(*bytes);
+            }
+
+            InstType::WRITE_8 => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                if self.stack[self.stack_size-1] >= self.arena.len() as isize {
+                    return Err(ExecErr::IllegalMemAccess);
+                }
+                self.arena[self.stack[self.stack_size-1]as usize] = self.stack[self.stack_size-2] as u8;
+                self.stack_size -= 2;
+            }
+            InstType::WRITE_16 => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                if self.stack[self.stack_size-1]+1 >= self.arena.len() as isize {
+                    return Err(ExecErr::IllegalMemAccess);
+                }
+                let index = self.stack[self.stack_size-1] as usize;
+                let bytes = (self.stack[self.stack_size-2] as u16).to_ne_bytes();
+                for i in 0..bytes.len() {self.arena[index+i] = bytes[i]}
+                self.stack_size -= 2;
+            }
+            InstType::WRITE_32 => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                if self.stack[self.stack_size-1]+3 >= self.arena.len() as isize {
+                    return Err(ExecErr::IllegalMemAccess);
+                }
+                let index = self.stack[self.stack_size-1] as usize;
+                let bytes = (self.stack[self.stack_size-2] as u32).to_ne_bytes();
+                for i in 0..bytes.len() {self.arena[index+i] = bytes[i]}
+                self.stack_size -= 2;
+            }
+            InstType::WRITE_64 => {
+                if self.stack_size < 2 {
+                    return Err(ExecErr::StackUnderflow)
+                }
+                if self.stack[self.stack_size-1]+7 >= self.arena.len() as isize {
+                    return Err(ExecErr::IllegalMemAccess);
+                }
+                let index = self.stack[self.stack_size-1] as usize;
+                let bytes = self.stack[self.stack_size-2].to_ne_bytes();
+                for i in 0..bytes.len() {self.arena[index+i] = bytes[i]}
+                self.stack_size -= 2;
+            }
+
             InstType::HALT => self.halted = true
         }
 
@@ -543,7 +641,7 @@ pub mod file {
                 }
             }
         }
-        
+
         match fs::write(dest, &f_buff) {
             Ok(_) => {Ok(())}
             Err(e) => {
@@ -618,7 +716,6 @@ pub mod file {
                         }
                     }
                     label_vec.push(label);
-
                     (_,line) = line.split_at(char_count+1);
                     break;
                 }
@@ -640,7 +737,6 @@ pub mod file {
                     if char == ' ' {
                         let (const_name, mut value) = line.split_at(char_count);
                         (_,value) = value.split_at(1);
-                        // const_vec.push(
                         let constant = Constant{
                             name: const_name,
                             value: if let Ok(v) = value.parse::<isize>() {v} 
@@ -781,8 +877,16 @@ pub mod file {
                     "itof" => {no_op_err!(operand, line); inst!(ITOF)}
                     "floor"=> {no_op_err!(operand, line); inst!(FLOOR)}
                     "ceil" => {no_op_err!(operand, line); inst!(CEIL)}
-                    "halt" => {no_op_err!(operand, line); inst!(HALT)}
+                    "read8" => {no_op_err!(operand, line); inst!(READ_8)}
+                    "read16" => {no_op_err!(operand, line); inst!(READ_16)}
+                    "read32" => {no_op_err!(operand, line); inst!(READ_32)}
+                    "read64" => {no_op_err!(operand, line); inst!(READ_64)}
+                    "write8" => {no_op_err!(operand, line); inst!(WRITE_8)}
+                    "write16" => {no_op_err!(operand, line); inst!(WRITE_16)}
+                    "write32" => {no_op_err!(operand, line); inst!(WRITE_32)}
+                    "write64" => {no_op_err!(operand, line); inst!(WRITE_64)}
 
+                    "halt" => {no_op_err!(operand, line); inst!(HALT)}
                     &_ => {
                         eprintln!("Error: Illegal instruction number: {} or I forgot to include some", inst_vec.len());
                         return Err((ExecErr::IllegalInst, line));

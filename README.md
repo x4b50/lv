@@ -79,7 +79,8 @@ So far implementation is finished on ~ day 6
 - [x] make floats work
 - [x] add bitwise instructions
 - [x] add subroutines
-- [ ] add heap w/ pointers on the stack - predefined native inst (ex. malloc) + including linux/windows ...
+- [x] add heap w/ pointers on the stack
+- [ ] add native instructions
 - [ ] add comments in some places
 - [x] use macros to reduce number of lines (there are technically still some)
 - [x] labels don't parse '_'
@@ -91,7 +92,6 @@ So far implementation is finished on ~ day 6
 - [x] crash on redefined labels
 - [ ] include files https://www.youtube.com/watch?v=k6qk6lT4S3U ~2:00:00+
 - [ ] use split_whitespace() while parsing
-- [ ] casting instead of transmuting isize <-> usize *might* cause problems
 - [x] use from_bites for vector conversion
 - [ ] some refactoring regarding instruction storage/parsing https://www.youtube.com/watch?v=LN9vrbBNG64 ~1:50:00
 - [x] reduce inst size (dynamic interpretation)
