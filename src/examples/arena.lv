@@ -1,0 +1,29 @@
+push 8946425964312534017 ;a number with all bytes different
+push 0
+write64
+push 7
+read8
+push 6
+read16
+push 4
+read32
+push 0
+read64
+dump
+
+pop
+pop
+pop
+pop
+
+push 0
+read8
+push 0
+read16
+push 0
+read32
+push 0
+read64
+dump
+
+halt

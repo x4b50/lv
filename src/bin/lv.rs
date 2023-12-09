@@ -15,7 +15,7 @@ Usage: lv FILE [OPTIONS]
 fn main() -> ExitCode {
     let prog;
     let mut stack_cap: usize = 32;
-    let mut arena_size: usize = 256;
+    let mut arena_size: usize = 128;
     let mut debug = false;
     let mut debug_step = false;
     let mut print_type = PrintType::I64;
@@ -100,7 +100,13 @@ fn main() -> ExitCode {
             }
         }
     }
-    if debug {println!("{:?}", vm.arena);}
+    if debug {
+        print!("Arena memory: ");
+        match print_type {
+            PrintType::I64 => {println!("{:?}", vm.arena);}
+            PrintType::F64 => {println!("{:x?}", vm.arena);}
+            PrintType::HEX => {println!("{:x?}", vm.arena);}
+        }}
 
     0.into()
 }

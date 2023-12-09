@@ -24,12 +24,14 @@ cargo build -r
 ./src/examples/gray.sh
 ./src/examples/euler.sh
 ./src/examples/variadics.sh
+./src/examples/arena.sh
 ```
 
 ## Writing programs
 Comments can be either ; or # to allow for the use of C preprocessor
 ``` nasm
 start:      ;create a label
+halt        ;stops the execution
 nop         ;no op
 push 7      ;push 7 on the stack
 pop         ;pop the top of the stack
@@ -63,7 +65,14 @@ ftoi        ;convert value from float to integer
 itof        ;convert value from integer to float
 floor       ;floor float
 ceil        ;ceil float
-halt        ;stops the execution
+write8      ;write 8 lowest bits from second to last value on arena adress sepcified by top of the stack
+write16     ;same but 16 bits
+write32     ;same but 32 bits
+write64     ;same but 64 bits
+read8       ;read 8 bits from arena adress specified by top of the stack
+read16      ;same but 16 bits
+read32      ;same but 32 bits
+read64      ;same but 64 bits
 ```
 
 So far implementation is finished on ~ day 6
@@ -80,6 +89,7 @@ So far implementation is finished on ~ day 6
 - [x] add bitwise instructions
 - [x] add subroutines
 - [x] add heap w/ pointers on the stack
+- [ ] possibly add malloc and free
 - [ ] add native instructions
 - [ ] add comments in some places
 - [x] use macros to reduce number of lines (there are technically still some)
