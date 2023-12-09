@@ -80,17 +80,19 @@ fn main() -> ExitCode {
     let mut ip = 0;
     while !vm.halted() {
         match vm.exec_inst(&print_type) {
-            Ok(_) => {if debug {
-                print!("Inst: {}: {}    \t", ip, vm.inst(ip));
-                vm.stack_print(&print_type);
+            Ok(_) => {
+                if debug {
+                    print!("Inst: {}: {}    \t", ip, vm.inst(ip));
+                    vm.stack_print(&print_type);
+                }
+                if debug_step {
+                    let mut s= String::new();
+                    stdin().read_line(&mut s).unwrap();
+                }ip = vm.ip()
             }
-            if debug_step {
-                let mut s= String::new();
-                stdin().read_line(&mut s).unwrap();
-            }ip = vm.ip()}
             Err(e) => {
-                if debug {eprintln!("{:?}", vm)}
-                eprintln!("ERROR: {:?}, Instruciton: {}", e,
+                if debug {eprintln!("{:#?}", vm)}
+                eprintln!("\nERROR: {:?}, Instruciton: {}", e,
                           if vm.prog_len() > vm.ip() {
                               format!("{}", vm.inst(vm.ip()).clone())
                           } else {
@@ -100,13 +102,15 @@ fn main() -> ExitCode {
             }
         }
     }
+
     if debug {
         print!("Arena memory: ");
         match print_type {
             PrintType::I64 => {println!("{:?}", vm.arena);}
             PrintType::F64 => {println!("{:x?}", vm.arena);}
             PrintType::HEX => {println!("{:x?}", vm.arena);}
-        }}
+        }
+    }
 
     0.into()
 }

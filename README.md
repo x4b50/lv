@@ -90,7 +90,7 @@ So far implementation is finished on ~ day 6
 - [x] add subroutines
 - [x] add heap w/ pointers on the stack
 - [ ] possibly add malloc and free
-- [ ] add native instructions
+- [ ] add native instructions (get_stack_top(n) to get arguments)
 - [ ] add comments in some places
 - [x] use macros to reduce number of lines (there are technically still some)
 - [x] labels don't parse '_'

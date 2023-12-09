@@ -37,14 +37,13 @@ pub mod inst_macro {
     }
 }
 
-#[derive(Debug)]
 pub struct Lada {
     halted: bool,
     ip: usize,
     stack: Vec<isize>,
     stack_size: usize,
-    program: Vec<Inst>,
     pub arena: Vec<u8>,
+    program: Vec<Inst>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -129,12 +128,12 @@ pub enum PrintType {
 impl Lada {
     pub fn init(program: Vec<Inst>, stack_cap: usize, arena_size: usize) -> Lada {
         Lada {
-            ip: 0,
             halted: false,
+            ip: 0,
             stack: vec![0; stack_cap],
             stack_size: 0,
-            program,
             arena: vec![0; arena_size],
+            program,
         }
     }
 
@@ -563,6 +562,28 @@ impl Lada {
         }
 
         self.ip += 1;
+        Ok(())
+    }
+}
+
+// todo: look up something about DebugStruct and alike
+impl fmt::Debug for Lada {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "Lada {{ ")?;
+        write!(f, "halted: {}, ", self.halted)?;
+        write!(f, "ip: {}\n", self.ip)?;
+        // write!(f, "\tprogram: {:?}\n", self.program)?;
+        write!(f, "program: [\n")?;
+        for inst in &self.program {
+            write!(f, " {{ {inst} }}")?;
+        }
+        write!(f, " ]\n")?;
+        write!(f, "stack size: {}\n", self.stack_size)?;
+        write!(f, "stack used: ")?;
+        self.stack_print(&PrintType::I64);
+        write!(f, "stack full: {:?}\n", self.stack)?;
+        write!(f, "arena: {:?}", self.arena)?;
+        write!(f, " }}")?;
         Ok(())
     }
 }
