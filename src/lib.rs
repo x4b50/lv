@@ -3,7 +3,7 @@ pub mod linux;
 #[cfg(test)]
 mod tests;
 use core::fmt;
-use std::mem::transmute;
+use std::{mem::transmute, isize};
 
 macro_rules! no_op_err {
     ($op:ident, $line:ident) => {
@@ -28,8 +28,8 @@ macro_rules! stack_assign_mem {
         let mut mem: Option<&Vec<u8>> = None;
         let mut index = 0;
         if $self.stack[$self.stack_size-1] >= (1<<48) {
-            let ext_mem = &$self.ext_mem[($self.stack[$self.stack_size-1]>>48)as usize];
-            mem = if let Some(m) = ext_mem {
+            let dyn_mem = &$self.dyn_mem[($self.stack[$self.stack_size-1]>>48)as usize];
+            mem = if let Some(m) = dyn_mem {
                 index = ($self.stack[$self.stack_size-1] as usize)>>48;
                 Some(m)
             }
@@ -56,8 +56,8 @@ macro_rules! write_mem {
         let mut index = 0;
         if $self.stack[$self.stack_size-1] >= (1<<48) {
             let adr = $self.stack[$self.stack_size-1]>>48;
-            let ext_mem = &mut $self.ext_mem[adr as usize];
-            mem = if let Some(m) = ext_mem {
+            let dyn_mem = &mut $self.dyn_mem[adr as usize];
+            mem = if let Some(m) = dyn_mem {
                 index = ($self.stack[$self.stack_size-1] as usize)>>48;
                 Some(m)
             }
@@ -101,7 +101,7 @@ pub struct Lada {
     stack: Vec<isize>,
     arena: Vec<u8>,
     program: Vec<Inst>,
-    ext_mem: Vec<Option<Vec<u8>>>,
+    dyn_mem: Vec<Option<Vec<u8>>>,
 }
 
 #[derive(Debug, Clone)]
@@ -168,6 +168,8 @@ pub enum InstType {
     WRITE_32,
     WRITE_64,
     NATIVE,
+    MALLOC,
+    FREE,
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -205,7 +207,8 @@ impl Lada {
             arena,
             program: program.inst,
             // empty vector to avoid errors on the first malloc
-            ext_mem: vec![Some(vec![])],
+            // todo: make macros work w/ empty
+            dyn_mem: vec![Some(vec![])],
         }
     }
 
@@ -595,9 +598,32 @@ impl Lada {
                 }
             }
 
+            InstType::MALLOC => {
+                let mut found = false;
+                let mut adr: isize = -1;
+                for i in 0..self.dyn_mem.len() {
+                    if self.dyn_mem[i] == None {
+                        self.dyn_mem[i] = Some(vec![0;self.stack[self.stack_size-1]as usize]);
+                        found = true;
+                        adr = (i << 48)as isize;
+                        break
+                    }
+                }
+                if !found {
+                    adr = (self.dyn_mem.len() << 48)as isize;
+                    self.dyn_mem.push(Some(vec![0;self.stack[self.stack_size-1]as usize]));
+                }
+                if adr < 0 { return Err(ExecErr::NativeError); }
+                self.stack[self.stack_size-1] = adr;
+            }
+
+            InstType::FREE => {
+                self.stack_size -= 1;
+                let adr = (self.stack[self.stack_size] >> 48) as usize;
+                self.dyn_mem[adr] = None;
+            }
             InstType::HALT => self.halted = true
         }
-
         self.ip += 1;
         Ok(())
     }
@@ -618,7 +644,8 @@ impl fmt::Debug for Lada {
         write!(f, "stack used: ")?;
         self.print_stack(&PrintType::I64);
         write!(f, "stack full: {:?}\n", self.stack)?;
-        write!(f, "arena: {:?}", self.arena)?;
+        write!(f, "arena: {:?}\n", self.arena)?;
+        write!(f, "dynamic memory: {:?}", self.dyn_mem)?;
         write!(f, " }}")?;
         Ok(())
     }
@@ -963,10 +990,12 @@ pub mod file {
                     "read32" => {no_op_err!(operand, line); inst!(READ_32)}
                     "read64" => {no_op_err!(operand, line); inst!(READ_64)}
                     "write8" => {no_op_err!(operand, line); inst!(WRITE_8)}
-                    "write16" => {no_op_err!(operand, line); inst!(WRITE_16)}
-                    "write32" => {no_op_err!(operand, line); inst!(WRITE_32)}
-                    "write64" => {no_op_err!(operand, line); inst!(WRITE_64)}
+                    "write16"=> {no_op_err!(operand, line); inst!(WRITE_16)}
+                    "write32"=> {no_op_err!(operand, line); inst!(WRITE_32)}
+                    "write64"=> {no_op_err!(operand, line); inst!(WRITE_64)}
                     "native" => {no_op_err!(operand, line); inst!(NATIVE)}
+                    "malloc" => {no_op_err!(operand, line); inst!(MALLOC)}
+                    "free"   => {no_op_err!(operand, line); inst!(FREE)}
 
                     "halt" => {no_op_err!(operand, line); inst!(HALT)}
                     &_ => {

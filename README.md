@@ -100,7 +100,7 @@ So far implementation is finished on ~ day 6
 - [x] add bitwise instructions
 - [x] add subroutines
 - [x] add heap w/ pointers on the stack
-- [x] possibly add malloc (move it to vm instructions)
+- [x] add malloc
 - [x] add native instructions
 - [x] add hex literals
 - [x] add string literals

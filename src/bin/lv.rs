@@ -12,7 +12,9 @@ Usage: lv FILE [OPTIONS]
   -a [size]\tset arena size
   -f\t\tprint stack values as floating point
   -b\t\tprint values (stack & arena) as hexadecimal
-  -R\t\tdynamic memory resizing";
+  -R\t\tdynamic arena resizing";
+  // dynamically growing stack
+  // print external memory
 
 fn main() -> ExitCode {
     let prog;
@@ -21,7 +23,7 @@ fn main() -> ExitCode {
     let mut debug = false;
     let mut debug_step = false;
     let mut debug_arena = false;
-    let mut mem_resize = false;
+    let mut arena_resize = false;
     let mut print_type = PrintType::I64;
 
     {// arg parsing - no need to hold the copied string in mem
@@ -50,7 +52,7 @@ fn main() -> ExitCode {
             if args[i] == "-d" {debug=true}
             else if args[i] == "-D" {debug=true;debug_step=true}
             else if args[i] == "-A" {debug_arena=true}
-            else if args[i] == "-R" {mem_resize=true}
+            else if args[i] == "-R" {arena_resize=true}
             else if args[i] == "-f" {print_type = PrintType::F64}
             else if args[i] == "-b" {print_type = PrintType::HEX}
             else if args[i] == "-s" {
@@ -101,7 +103,7 @@ fn main() -> ExitCode {
                 }ip = vm.ip()
             }
             Err(e) => {
-                if mem_resize && e == ExecErr::IllegalMemAccess {
+                if arena_resize && e == ExecErr::IllegalMemAccess {
                     match vm.last_err_inst() {
                         InstType::READ_8  | InstType::READ_16  | InstType::READ_32  | InstType::READ_64 |
                         InstType::WRITE_8 | InstType::WRITE_16 | InstType::WRITE_32 | InstType::WRITE_64 => {
