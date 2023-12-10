@@ -1,8 +1,8 @@
-; allocate 16 bytes of externam memory
-push 16
+; allocate 4 bytes of externam memory
+push 4
 malloc
 ; allocate 16 bytes of externam memory
-push 32
+push 16
 malloc
 dump
 
@@ -24,6 +24,40 @@ pop
 
 ; free that memory
 free
+
+push 2137
+push 2
+pick
+write32
+free
+dump
+
+; allocate new memory
+push 8
+malloc
+push 3
+malloc
+dump
+
+; switch pointers
+push 2
+pick
+push 2
+pick
+push 3
+shove
+push 1
+shove
+dump
+
+; first deallocate first one
+free
+dump
+push 0x123456
+push 2
+pick
+write16
+dump
 free
 dump
 

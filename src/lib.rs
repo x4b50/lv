@@ -23,14 +23,14 @@ macro_rules! f64_bool {
     };
 }
 
-macro_rules! stack_assign_mem {
+macro_rules! read_mem {
     ($self:ident, $type_len:tt, $type:tt) => {
         let mut mem: Option<&Vec<u8>> = None;
-        let mut index = 0;
+        let mut index = -1;
         if $self.stack[$self.stack_size-1] >= (1<<48) {
-            let dyn_mem = &$self.dyn_mem[($self.stack[$self.stack_size-1]>>48)as usize];
+            let dyn_mem = &$self.dyn_mem[($self.stack[$self.stack_size-1]>>48)as usize-1];
             mem = if let Some(m) = dyn_mem {
-                index = ($self.stack[$self.stack_size-1] as usize)>>48;
+                index = 0;
                 Some(m)
             }
             else { return Err(ExecErr::IllegalMemAccess); }
@@ -39,10 +39,11 @@ macro_rules! stack_assign_mem {
             if $self.stack[$self.stack_size-1]-1+$type_len >= $self.arena.len() as isize {
                 return Err(ExecErr::IllegalMemAccess);
             }
-            index = $self.stack[$self.stack_size-1] as usize;
+            index = $self.stack[$self.stack_size-1];
             mem = Some(&mut $self.arena);
         }
-        if index == 0 && $self.stack[$self.stack_size-1] != 0 { return Err(ExecErr::NativeError); }
+        if index < 0 { return Err(ExecErr::NativeError); }
+        let index = index as usize;
         let bytes: &[u8; $type_len] = if let Some(m) = mem {
             m[index..index+$type_len].try_into().unwrap()
         } else {return Err(ExecErr::IllegalMemAccess);};
@@ -53,12 +54,12 @@ macro_rules! stack_assign_mem {
 macro_rules! write_mem {
     ($self:ident, $type_len:tt, $type:tt) => {
         let mut mem: Option<&mut Vec<u8>> = None;
-        let mut index = 0;
+        let mut index = -1;
         if $self.stack[$self.stack_size-1] >= (1<<48) {
-            let adr = $self.stack[$self.stack_size-1]>>48;
+            let adr = ($self.stack[$self.stack_size-1]>>48)-1;
             let dyn_mem = &mut $self.dyn_mem[adr as usize];
             mem = if let Some(m) = dyn_mem {
-                index = ($self.stack[$self.stack_size-1] as usize)>>48;
+                index = 0;
                 Some(m)
             }
             else { return Err(ExecErr::IllegalMemAccess); }
@@ -67,10 +68,11 @@ macro_rules! write_mem {
             if $self.stack[$self.stack_size-1]-1+$type_len >= $self.arena.len() as isize {
                 return Err(ExecErr::IllegalMemAccess);
             }
-            index = $self.stack[$self.stack_size-1] as usize;
+            index = $self.stack[$self.stack_size-1];
             mem = Some(&mut $self.arena);
         }
-        if index == 0 && $self.stack[$self.stack_size-1] != 0 { return Err(ExecErr::NativeError); }
+        if index < 0 { return Err(ExecErr::NativeError); }
+        let index = index as usize;
         if let Some(m) = mem {
             let bytes = ($self.stack[$self.stack_size-2] as $type).to_ne_bytes();
             for i in 0..bytes.len() {m[index+i] = bytes[i]}
@@ -206,9 +208,8 @@ impl Lada {
             stack: vec![0; stack_cap],
             arena,
             program: program.inst,
-            // empty vector to avoid errors on the first malloc
-            // todo: make macros work w/ empty
-            dyn_mem: vec![Some(vec![])],
+            // because 0<<48 == zero chunk addresses will be offset by 1
+            dyn_mem: vec![],
         }
     }
 
@@ -220,6 +221,7 @@ impl Lada {
     pub fn resize_arena(&mut self, n: usize) { self.arena.resize(n, 0); }
     pub fn last_err_inst(&self) -> &InstType { &self.program[self.ip].kind }
     pub fn get_stack_top(&self, n: usize) -> &[isize] { &self.stack[self.stack_size-n..self.stack_size] }
+    pub fn get_dyn_mem(&self) -> &[Option<Vec<u8>>] {&self.dyn_mem}
 
     pub fn print_stack(&self, t: &PrintType) {
         print!("[");
@@ -547,22 +549,22 @@ impl Lada {
             InstType::READ_8 => {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
-                } stack_assign_mem!(self, 1, u8);
+                } read_mem!(self, 1, u8);
             }
             InstType::READ_16 => {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
-                } stack_assign_mem!(self, 2, u16);
+                } read_mem!(self, 2, u16);
             }
             InstType::READ_32 => {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
-                } stack_assign_mem!(self, 4, u32);
+                } read_mem!(self, 4, u32);
             }
             InstType::READ_64 => {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
-                } stack_assign_mem!(self, 8, u64);
+                } read_mem!(self, 8, u64);
             }
 
             InstType::WRITE_8 => {
@@ -605,12 +607,12 @@ impl Lada {
                     if self.dyn_mem[i] == None {
                         self.dyn_mem[i] = Some(vec![0;self.stack[self.stack_size-1]as usize]);
                         found = true;
-                        adr = (i << 48)as isize;
+                        adr = (i+1 << 48)as isize;
                         break
                     }
                 }
                 if !found {
-                    adr = (self.dyn_mem.len() << 48)as isize;
+                    adr = (self.dyn_mem.len()+1 << 48)as isize;
                     self.dyn_mem.push(Some(vec![0;self.stack[self.stack_size-1]as usize]));
                 }
                 if adr < 0 { return Err(ExecErr::NativeError); }
@@ -619,7 +621,7 @@ impl Lada {
 
             InstType::FREE => {
                 self.stack_size -= 1;
-                let adr = (self.stack[self.stack_size] >> 48) as usize;
+                let adr = (self.stack[self.stack_size] >> 48) as usize-1;
                 self.dyn_mem[adr] = None;
             }
             InstType::HALT => self.halted = true

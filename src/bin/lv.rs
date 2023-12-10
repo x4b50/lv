@@ -12,9 +12,9 @@ Usage: lv FILE [OPTIONS]
   -a [size]\tset arena size
   -f\t\tprint stack values as floating point
   -b\t\tprint values (stack & arena) as hexadecimal
-  -R\t\tdynamic arena resizing";
+  -R\t\tdynamic arena resizing
+  -m\t\tprint dynamic memory";
   // dynamically growing stack
-  // print external memory
 
 fn main() -> ExitCode {
     let prog;
@@ -24,6 +24,7 @@ fn main() -> ExitCode {
     let mut debug_step = false;
     let mut debug_arena = false;
     let mut arena_resize = false;
+    let mut debug_mem = false;
     let mut print_type = PrintType::I64;
 
     {// arg parsing - no need to hold the copied string in mem
@@ -53,6 +54,7 @@ fn main() -> ExitCode {
             else if args[i] == "-D" {debug=true;debug_step=true}
             else if args[i] == "-A" {debug_arena=true}
             else if args[i] == "-R" {arena_resize=true}
+            else if args[i] == "-m" {debug_mem=true}
             else if args[i] == "-f" {print_type = PrintType::F64}
             else if args[i] == "-b" {print_type = PrintType::HEX}
             else if args[i] == "-s" {
@@ -89,12 +91,18 @@ fn main() -> ExitCode {
     while !vm.halted() {
         match vm.exec_inst(&print_type) {
             Ok(_) => {
-                if debug || debug_arena {print!("Inst: {}: {}    \t", ip, vm.inst(ip));}
+                if debug || debug_arena || debug_mem {print!("Inst: {}: {}    \t", ip, vm.inst(ip));}
                 if debug {vm.print_stack(&print_type);}
                 if debug_arena {print!("Arena memory: ");
                     match print_type {
                         PrintType::I64 => {println!("{:?}",  vm.get_arena());}
                         _ => {println!("{:x?}", vm.get_arena());}
+                    }
+                }
+                if debug_mem {print!("Dynamic memory: ");
+                    match print_type {
+                        PrintType::I64 => {println!("{:?}",  vm.get_dyn_mem());}
+                        _ => {println!("{:x?}", vm.get_dyn_mem());}
                     }
                 }
                 if debug_step {
