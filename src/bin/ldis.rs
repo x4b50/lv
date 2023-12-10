@@ -17,6 +17,16 @@ fn main() -> ExitCode {
         }
     };
 
+    if prog.mem.len() > 0{
+        println!("Program memory:");
+        println!("{:?}", prog.mem);
+        match std::str::from_utf8(&prog.mem) {
+            Ok(s) => println!("{:?}", s),
+            Err(_) => {}
+        }
+    }
+
+    println!("Program:");
     let mut prog_str: Vec<u8> = vec![];
     for inst in prog.inst {
         for char in inst.to_string().chars() {
