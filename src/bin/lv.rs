@@ -1,5 +1,5 @@
 use std::{process::ExitCode, io::stdin};
-use lv::{Lada, file::*, Inst, InstType, PrintType};
+use lv::{Lada, file::*, Inst, InstType, PrintType, ExecErr};
 
 const HELP_PAGE: &str = "Lada Virtual machine
 
@@ -11,7 +11,8 @@ Usage: lv FILE [OPTIONS]
   -s [size]\tset stack size
   -a [size]\tset arena size
   -f\t\tprint stack values as floating point
-  -b\t\tprint values (stack & arena) as hexadecimal";
+  -b\t\tprint values (stack & arena) as hexadecimal
+  -R\t\tdynamic memory resizing";
 
 fn main() -> ExitCode {
     let prog;
@@ -20,6 +21,7 @@ fn main() -> ExitCode {
     let mut debug = false;
     let mut debug_step = false;
     let mut debug_arena = false;
+    let mut mem_resize = false;
     let mut print_type = PrintType::I64;
 
     {// arg parsing - no need to hold the copied string in mem
@@ -48,6 +50,7 @@ fn main() -> ExitCode {
             if args[i] == "-d" {debug=true}
             else if args[i] == "-D" {debug=true;debug_step=true}
             else if args[i] == "-A" {debug_arena=true}
+            else if args[i] == "-R" {mem_resize=true}
             else if args[i] == "-f" {print_type = PrintType::F64}
             else if args[i] == "-b" {print_type = PrintType::HEX}
             else if args[i] == "-s" {
@@ -98,6 +101,20 @@ fn main() -> ExitCode {
                 }ip = vm.ip()
             }
             Err(e) => {
+                if mem_resize && e == ExecErr::IllegalMemAccess {
+                    match vm.last_err_inst() {
+                        InstType::READ_8  | InstType::READ_16  | InstType::READ_32  | InstType::READ_64 |
+                        InstType::WRITE_8 | InstType::WRITE_16 | InstType::WRITE_32 | InstType::WRITE_64 => {
+                            vm.resize_arena(vm.get_stack_top(1)[0] as usize +8);
+                            continue;
+                        }
+                        i => {
+                            eprintln!("{i:?}");
+                            eprintln!("This shouldn't typically happen, probably a native function tried to access arena");
+                            return 1.into();
+                        }
+                    }
+                }
                 if debug {eprintln!("{:#?}", vm)}
                 eprintln!("\nERROR: {:?}, Instruciton: {}", e,
                           if vm.prog_len() > vm.ip() {

@@ -32,6 +32,7 @@ cargo build -r
 ./src/examples/variadics.sh
 ./src/examples/arena.sh
 ./src/examples/native.sh
+./src/examples/resize.sh
 ```
 
 ## Writing programs
@@ -86,6 +87,7 @@ native      ;calls native function with the index at the top of the stack
 So far implementation is finished on ~ day 6
 
 ## TODO
+- [ ] add versioning system for byte code
 - [x] implement the instruction set
 - [x] implement the assembly
 - [x] imlpement jump labels
@@ -102,6 +104,7 @@ So far implementation is finished on ~ day 6
 - [x] add hex literals
 - [x] add string literals
 - [ ] add comments in some places
+- [ ] use vec::append instead of iterating over bytes
 - [x] use macros to reduce number of lines (there are technically still some)
 - [x] labels don't parse '_'
 - [ ] add more tests

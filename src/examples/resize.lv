@@ -1,0 +1,17 @@
+%adr 8
+%adr_err 32
+
+push 4.2
+push %adr
+write64
+
+push %adr_err
+read8
+
+push 6.9
+push %adr_err
+push 8
+add
+write16
+
+halt

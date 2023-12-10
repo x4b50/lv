@@ -113,7 +113,7 @@ pub enum InstType {
     NATIVE,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum ExecErr {
     StackOverflow,
     StackUnderflow,
@@ -155,6 +155,9 @@ impl Lada {
     pub fn inst(&self, n: usize) -> &Inst {&self.program[n]}
     pub fn prog_len(&self) -> usize {self.program.len()}
     pub fn get_arena(&self) -> &[u8] {&self.arena}
+    pub fn resize_arena(&mut self, n: usize) { self.arena.resize(n, 0); }
+    pub fn last_err_inst(&self) -> &InstType { &self.program[self.ip].kind }
+    pub fn get_stack_top(&self, n: usize) -> &[isize] { &self.stack[self.stack_size-n..self.stack_size] }
 
     pub fn print_stack(&self, t: &PrintType) {
         print!("[");
