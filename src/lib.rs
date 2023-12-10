@@ -708,13 +708,13 @@ pub mod file {
         }
     }
 
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug)]
     struct Label<'a> {
         name: &'a str,
         addr: usize
     }
 
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug)]
     struct Constant<'a> {
         name: &'a str,
         value: isize

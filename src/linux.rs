@@ -1,8 +1,11 @@
+use std::thread::sleep;
+
 use super::*;
 
-pub const NATIVES: [Native;2] = [
+pub const NATIVES: [Native;3] = [
     Lada::sys_print,
     Lada::str_print,
+    Lada::sleep,
 ];
 
 impl Lada {
@@ -27,6 +30,12 @@ impl Lada {
                 return Err(ExecErr::NativeError);
             }
         });
+        Ok(())
+    }
+
+    fn sleep(&mut self) -> Result<(), ExecErr> {
+        self.stack_size -= 1;
+        sleep(std::time::Duration::from_millis(self.stack[self.stack_size]as u64));
         Ok(())
     }
 }
