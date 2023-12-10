@@ -47,6 +47,12 @@ pub struct Lada {
     program: Vec<Inst>,
 }
 
+#[derive(Debug, Clone)]
+pub struct Program {
+    pub inst: Vec<Inst>,
+    pub mem: Vec<u8>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Inst {
     pub kind: InstType,
@@ -131,14 +137,16 @@ pub enum PrintType {
 type Native = fn(&mut Lada) -> Result<(), ExecErr>;
 
 impl Lada {
-    pub fn init(program: Vec<Inst>, stack_cap: usize, arena_size: usize) -> Lada {
+    pub fn init(program: Program, stack_cap: usize, arena_size: usize) -> Lada { //todo!("implement arena reading");
+        let mut arena = program.mem;
+        if arena_size > arena.len() {arena.resize(arena_size, 0);}
         Lada {
             halted: false,
             ip: 0,
             stack_size: 0,
             stack: vec![0; stack_cap],
-            arena: vec![0; arena_size],
-            program,
+            arena,
+            program: program.inst,
         }
     }
 
@@ -632,12 +640,17 @@ pub mod file {
     use std::{fs, mem::size_of};
     use super::*;
 
-    pub fn read_prog_from_file(source: &str) -> std::io::Result<Vec<Inst>> {
+    pub fn read_prog_from_file(source: &str) -> std::io::Result<Program> {
         assert!(size_of::<InstType>() == size_of::<u8>(), "InstType is no longer 8bits long");
         let buff = fs::read(source)?;
-        let mut prog: Vec<Inst> = vec![];
+        let mut prog: Program = Program { inst: vec![], mem: vec![] };
 
-        let mut i = 0;
+        let len = usize::from_ne_bytes(buff[..8].try_into().unwrap());
+        let mut i = 8+len;
+        for b in 8..i {
+            prog.mem.push(buff[b]);
+        }
+
         while i < buff.len() {
             let mut operand = None;
             let inst_type: InstType = unsafe {transmute(buff[i])};
@@ -650,14 +663,14 @@ pub mod file {
             }
 
             match operand {
-                None =>     prog.push(Inst { kind: inst_type, has_op: false, operand: 0 }),
-                Some(op) => prog.push(Inst { kind: inst_type, has_op: true, operand: op })
+                None =>     prog.inst.push(Inst { kind: inst_type, has_op: false, operand: 0 }),
+                Some(op) => prog.inst.push(Inst { kind: inst_type, has_op: true, operand: op })
             }
         }
         Ok(prog)
     }
 
-    pub fn dump_prog_to_file(prog: &Vec<Inst>, dest: &str) -> std::io::Result<()> {
+    pub fn dump_prog_to_file(prog: &Program, dest: &str) -> std::io::Result<()> {
         assert!(size_of::<InstType>() == size_of::<u8>(), "InstType is no longer 8bits long");
         std::fs::File::create(dest)?;
         match fs::OpenOptions::new().write(true).open(dest) {
@@ -669,7 +682,13 @@ pub mod file {
         }
 
         let mut f_buff: Vec<u8> = vec![];
-        for inst in prog {
+        for byte in usize::to_ne_bytes(prog.mem.len()) {
+            f_buff.push(byte);
+        }
+        for i in 0..prog.mem.len() {
+            f_buff.push(prog.mem[i]);
+        }
+        for inst in &prog.inst {
             let byte: &u8 = unsafe {transmute(&inst.kind)};
             f_buff.push(*byte);
 
@@ -702,9 +721,10 @@ pub mod file {
     }
 
     // will have to change or it will become a piece of spaghetti
-    pub fn asm_parse(source: &str) -> Result<Vec<Inst>, (ExecErr, usize)> {
+    pub fn asm_parse(source: &str) -> Result<Program, (ExecErr, usize)> {
         let mut line_count = 0;
         let mut inst_vec: Vec<Inst> = vec![];
+        let mut mem: Vec<u8> = vec![];
         // name, operand, inst number, line
         let mut unchecked_inst_vec: Vec<(&str, &str, isize, usize)> = vec![];
         let mut inst_num: isize = 0;
@@ -777,7 +797,16 @@ pub mod file {
                         (_,value) = value.split_at(1);
                         let constant = Constant{
                             name: const_name,
-                            value: if let Ok(v) = value.parse::<isize>() {v} 
+                            value: if value.starts_with('"') {
+                                let str = value.trim_matches('"').replace("\\n", "\n").replace("\\t", "\t").replace("\\0", "\0");
+                                let bytes = str.as_bytes();
+                                let adr = mem.len();
+                                for byte in bytes {
+                                    mem.push(*byte);
+                                }
+                                adr as isize
+                            }
+                            else if let Ok(v) = value.parse::<isize>() {v} 
                             else if let Ok(v) = isize::from_str_radix(operand.trim_start_matches("0x"), 16) {v}
                             else if let Ok(v) = value.parse::<f64>() {unsafe {transmute::<f64, isize>(v)}}
                             else {
@@ -937,7 +966,7 @@ pub mod file {
             );
         }
 
-        Ok(inst_vec)
+        Ok(Program { inst: inst_vec, mem })
     }
 }
 

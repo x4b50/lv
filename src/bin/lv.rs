@@ -16,7 +16,7 @@ Usage: lv FILE [OPTIONS]
 fn main() -> ExitCode {
     let prog;
     let mut stack_cap: usize = 32;
-    let mut arena_size: usize = 128;
+    let mut arena_size: usize = 32;
     let mut debug = false;
     let mut debug_step = false;
     let mut debug_arena = false;

@@ -23,6 +23,7 @@ Getting help inormation
 ## Running examples
 ```sh
 cargo build -r
+./src/examples/hello_world.sh
 ./src/examples/fib_term.sh
 ./src/examples/float.sh
 ./src/examples/bitwise.sh
@@ -99,7 +100,7 @@ So far implementation is finished on ~ day 6
 - [ ] possibly add malloc and free
 - [x] add native instructions
 - [x] add hex literals
-- [ ] add string literals
+- [x] add string literals
 - [ ] add comments in some places
 - [x] use macros to reduce number of lines (there are technically still some)
 - [x] labels don't parse '_'

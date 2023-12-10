@@ -18,7 +18,7 @@ fn main() -> ExitCode {
     };
 
     let mut prog_str: Vec<u8> = vec![];
-    for inst in prog {
+    for inst in prog.inst {
         for char in inst.to_string().chars() {
             prog_str.push(char as u8);
         }

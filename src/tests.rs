@@ -21,13 +21,16 @@ pub mod tests{
     #[test]
     fn check_file_operations() {
         let dest: &str = "prog_inst.dat";
-        let mut prog = prog!();
+        let mut prog = Program {
+            inst: prog!(),
+            mem: vec![]
+        };
         let prog_cp = prog.clone();
 
         file::dump_prog_to_file(&mut prog, dest).unwrap();
         let prog = file::read_prog_from_file(dest).unwrap();
-        for i in 0..prog_cp.len() {
-            assert!(prog[i] == prog_cp[i]);
+        for i in 0..prog_cp.inst.len() {
+            assert!(prog.inst[i] == prog_cp.inst[i]);
         }
     }
 
@@ -37,7 +40,7 @@ pub mod tests{
         let asm_prog = file::asm_parse(source).unwrap();
         let prog = prog!();
         for i in 0..prog.len() {
-            assert!(prog[i] == asm_prog[i]);
+            assert!(prog[i] == asm_prog.inst[i]);
         }
     }
 
@@ -47,7 +50,7 @@ pub mod tests{
         let asm_prog = file::asm_parse(source).unwrap();
         let prog = prog!();
         for i in 0..prog.len() {
-            assert!(prog[i] == asm_prog[i]);
+            assert!(prog[i] == asm_prog.inst[i]);
         }
     }
 }
