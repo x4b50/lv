@@ -8,7 +8,7 @@ Usage: lv FILE [OPTIONS]
   -d\t\trun in debug mode
   -D\t\trun in step debug mode
   -A\t\tdebug arena memory
-  -s [size]\tset stack size
+  -s [size]\tset initial stack size (not realy needed with malloc)
   -a [size]\tset arena size
   -f\t\tprint stack values as floating point
   -b\t\tprint values (stack & arena) as hexadecimal
@@ -17,7 +17,7 @@ Usage: lv FILE [OPTIONS]
 fn main() -> ExitCode {
     let prog;
     let mut stack_cap: usize = 32;
-    let mut arena_size: usize = 32;
+    let mut arena_size: usize = 0;
     let mut debug = false;
     let mut debug_step = false;
     let mut debug_arena = false;

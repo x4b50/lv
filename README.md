@@ -33,6 +33,7 @@ cargo build -r
 ./src/examples/arena.sh
 ./src/examples/native.sh
 ./src/examples/resize.sh
+./src/examples/arena_malloc.sh
 ```
 
 ## Writing programs
@@ -99,7 +100,7 @@ So far implementation is finished on ~ day 6
 - [x] add bitwise instructions
 - [x] add subroutines
 - [x] add heap w/ pointers on the stack
-- [ ] possibly add malloc and free
+- [x] possibly add malloc
 - [x] add native instructions
 - [x] add hex literals
 - [x] add string literals
