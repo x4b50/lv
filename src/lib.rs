@@ -198,7 +198,7 @@ pub enum PrintType {
 type Native = fn(&mut Lada) -> Result<(), ExecErr>;
 
 impl Lada {
-    pub fn init(program: Program, stack_cap: usize, arena_size: usize) -> Lada { //todo!("implement arena reading");
+    pub fn init(program: Program, stack_cap: usize, arena_size: usize) -> Lada {
         let mut arena = program.mem;
         if arena_size > arena.len() {arena.resize(arena_size, 0);}
         Lada {
@@ -217,6 +217,7 @@ impl Lada {
     pub fn halted(&self) -> bool {self.halted}
     pub fn inst(&self, n: usize) -> &Inst {&self.program[n]}
     pub fn prog_len(&self) -> usize {self.program.len()}
+    pub fn stack_extend(&mut self, n: usize) { self.stack.resize(self.stack.len()+n, 0); }
     pub fn get_arena(&self) -> &[u8] {&self.arena}
     pub fn resize_arena(&mut self, n: usize) { self.arena.resize(n, 0); }
     pub fn last_err_inst(&self) -> &InstType { &self.program[self.ip].kind }

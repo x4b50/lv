@@ -12,9 +12,9 @@ Usage: lv FILE [OPTIONS]
   -a [size]\tset arena size
   -f\t\tprint stack values as floating point
   -b\t\tprint values (stack & arena) as hexadecimal
+  -S\t\tdynamically growing stack
   -R\t\tdynamic arena resizing
   -m\t\tprint dynamic memory";
-  // dynamically growing stack
 
 fn main() -> ExitCode {
     let prog;
@@ -23,6 +23,7 @@ fn main() -> ExitCode {
     let mut debug = false;
     let mut debug_step = false;
     let mut debug_arena = false;
+    let mut stack_resize = false;
     let mut arena_resize = false;
     let mut debug_mem = false;
     let mut print_type = PrintType::I64;
@@ -53,6 +54,7 @@ fn main() -> ExitCode {
             if args[i] == "-d" {debug=true}
             else if args[i] == "-D" {debug=true;debug_step=true}
             else if args[i] == "-A" {debug_arena=true}
+            else if args[i] == "-S" {stack_resize=true}
             else if args[i] == "-R" {arena_resize=true}
             else if args[i] == "-m" {debug_mem=true}
             else if args[i] == "-f" {print_type = PrintType::F64}
@@ -111,6 +113,9 @@ fn main() -> ExitCode {
                 }ip = vm.ip()
             }
             Err(e) => {
+                if stack_resize && e == ExecErr::StackOverflow {
+                    vm.stack_extend(8); continue;
+                }
                 if arena_resize && e == ExecErr::IllegalMemAccess {
                     match vm.last_err_inst() {
                         InstType::READ_8  | InstType::READ_16  | InstType::READ_32  | InstType::READ_64 |
