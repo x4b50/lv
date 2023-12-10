@@ -100,10 +100,11 @@ So far implementation is finished on ~ day 6
 - [x] add bitwise instructions
 - [x] add subroutines
 - [x] add heap w/ pointers on the stack
-- [x] possibly add malloc
+- [x] possibly add malloc (move it to vm instructions)
 - [x] add native instructions
 - [x] add hex literals
 - [x] add string literals
+- [ ] extract that 48 for pointers to some global var
 - [ ] add comments in some places
 - [ ] use vec::append instead of iterating over bytes
 - [x] use macros to reduce number of lines (there are technically still some)

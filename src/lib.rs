@@ -23,6 +23,62 @@ macro_rules! f64_bool {
     };
 }
 
+macro_rules! stack_assign_mem {
+    ($self:ident, $type_len:tt, $type:tt) => {
+        let mut mem: Option<&Vec<u8>> = None;
+        let mut index = 0;
+        if $self.stack[$self.stack_size-1] >= (1<<48) {
+            let ext_mem = &$self.ext_mem[($self.stack[$self.stack_size-1]>>48)as usize];
+            mem = if let Some(m) = ext_mem {
+                index = ($self.stack[$self.stack_size-1] as usize)>>48;
+                Some(m)
+            }
+            else { return Err(ExecErr::IllegalMemAccess); }
+        }
+        if mem == None {
+            if $self.stack[$self.stack_size-1]-1+$type_len >= $self.arena.len() as isize {
+                return Err(ExecErr::IllegalMemAccess);
+            }
+            index = $self.stack[$self.stack_size-1] as usize;
+            mem = Some(&mut $self.arena);
+        }
+        if index == 0 && $self.stack[$self.stack_size-1] != 0 { return Err(ExecErr::NativeError); }
+        let bytes: &[u8; $type_len] = if let Some(m) = mem {
+            m[index..index+$type_len].try_into().unwrap()
+        } else {return Err(ExecErr::IllegalMemAccess);};
+        $self.stack[$self.stack_size-1] = $type::from_ne_bytes(*bytes) as isize;
+    };
+}
+
+macro_rules! write_mem {
+    ($self:ident, $type_len:tt, $type:tt) => {
+        let mut mem: Option<&mut Vec<u8>> = None;
+        let mut index = 0;
+        if $self.stack[$self.stack_size-1] >= (1<<48) {
+            let adr = $self.stack[$self.stack_size-1]>>48;
+            let ext_mem = &mut $self.ext_mem[adr as usize];
+            mem = if let Some(m) = ext_mem {
+                index = ($self.stack[$self.stack_size-1] as usize)>>48;
+                Some(m)
+            }
+            else { return Err(ExecErr::IllegalMemAccess); }
+        }
+        if mem == None {
+            if $self.stack[$self.stack_size-1]-1+$type_len >= $self.arena.len() as isize {
+                return Err(ExecErr::IllegalMemAccess);
+            }
+            index = $self.stack[$self.stack_size-1] as usize;
+            mem = Some(&mut $self.arena);
+        }
+        if index == 0 && $self.stack[$self.stack_size-1] != 0 { return Err(ExecErr::NativeError); }
+        if let Some(m) = mem {
+            let bytes = ($self.stack[$self.stack_size-2] as $type).to_ne_bytes();
+            for i in 0..bytes.len() {m[index+i] = bytes[i]}
+            $self.stack_size -= 2;
+        }
+    };
+}
+
 pub mod inst_macro {
     #[macro_export]
     macro_rules! inst {
@@ -45,6 +101,7 @@ pub struct Lada {
     stack: Vec<isize>,
     arena: Vec<u8>,
     program: Vec<Inst>,
+    ext_mem: Vec<Option<Vec<u8>>>,
 }
 
 #[derive(Debug, Clone)]
@@ -147,6 +204,8 @@ impl Lada {
             stack: vec![0; stack_cap],
             arena,
             program: program.inst,
+            // empty vector to avoid errors on the first malloc
+            ext_mem: vec![Some(vec![])],
         }
     }
 
@@ -429,9 +488,6 @@ impl Lada {
             }
 
             InstType::DUMP => {
-                if self.stack_size < 1 {
-                    return Err(ExecErr::StackUnderflow)
-                }
                 print!("Stack: ");
                 self.print_stack(&print_type);
             }
@@ -488,91 +544,43 @@ impl Lada {
             InstType::READ_8 => {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
-                }
-                if self.stack[self.stack_size-1] >= self.arena.len() as isize {
-                    return Err(ExecErr::IllegalMemAccess);
-                }
-                self.stack[self.stack_size-1] = self.arena[self.stack[self.stack_size-1]as usize] as isize;
+                } stack_assign_mem!(self, 1, u8);
             }
             InstType::READ_16 => {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
-                }
-                if self.stack[self.stack_size-1]+1 >= self.arena.len() as isize {
-                    return Err(ExecErr::IllegalMemAccess);
-                }
-                let index = self.stack[self.stack_size-1] as usize;
-                let bytes: &[u8; 2] = &self.arena[index..index+2].try_into().unwrap();
-                self.stack[self.stack_size-1] = u16::from_ne_bytes(*bytes) as isize;
+                } stack_assign_mem!(self, 2, u16);
             }
             InstType::READ_32 => {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
-                }
-                if self.stack[self.stack_size-1]+3 >= self.arena.len() as isize {
-                    return Err(ExecErr::IllegalMemAccess);
-                }
-                let index = self.stack[self.stack_size-1] as usize;
-                let bytes: &[u8; 4] = &self.arena[index..index+4].try_into().unwrap();
-                self.stack[self.stack_size-1] = u32::from_ne_bytes(*bytes) as isize;
+                } stack_assign_mem!(self, 4, u32);
             }
             InstType::READ_64 => {
                 if self.stack_size < 1 {
                     return Err(ExecErr::StackUnderflow)
-                }
-                if self.stack[self.stack_size-1]+7 >= self.arena.len() as isize {
-                    return Err(ExecErr::IllegalMemAccess);
-                }
-                let index = self.stack[self.stack_size-1] as usize;
-                let bytes: &[u8; 8] = &self.arena[index..index+8].try_into().unwrap();
-                self.stack[self.stack_size-1] = isize::from_ne_bytes(*bytes);
+                } stack_assign_mem!(self, 8, u64);
             }
 
             InstType::WRITE_8 => {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
-                }
-                if self.stack[self.stack_size-1] >= self.arena.len() as isize {
-                    return Err(ExecErr::IllegalMemAccess);
-                }
-                self.arena[self.stack[self.stack_size-1]as usize] = self.stack[self.stack_size-2] as u8;
-                self.stack_size -= 2;
+                } write_mem!(self, 1, u8);
             }
             InstType::WRITE_16 => {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
-                }
-                if self.stack[self.stack_size-1]+1 >= self.arena.len() as isize {
-                    return Err(ExecErr::IllegalMemAccess);
-                }
-                let index = self.stack[self.stack_size-1] as usize;
-                let bytes = (self.stack[self.stack_size-2] as u16).to_ne_bytes();
-                for i in 0..bytes.len() {self.arena[index+i] = bytes[i]}
-                self.stack_size -= 2;
+                } write_mem!(self, 2, u16);
             }
             InstType::WRITE_32 => {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
-                }
-                if self.stack[self.stack_size-1]+3 >= self.arena.len() as isize {
-                    return Err(ExecErr::IllegalMemAccess);
-                }
-                let index = self.stack[self.stack_size-1] as usize;
-                let bytes = (self.stack[self.stack_size-2] as u32).to_ne_bytes();
-                for i in 0..bytes.len() {self.arena[index+i] = bytes[i]}
-                self.stack_size -= 2;
+                } write_mem!(self, 4, u32);
             }
             InstType::WRITE_64 => {
                 if self.stack_size < 2 {
                     return Err(ExecErr::StackUnderflow)
-                }
-                if self.stack[self.stack_size-1]+7 >= self.arena.len() as isize {
-                    return Err(ExecErr::IllegalMemAccess);
-                }
-                let index = self.stack[self.stack_size-1] as usize;
-                let bytes = self.stack[self.stack_size-2].to_ne_bytes();
-                for i in 0..bytes.len() {self.arena[index+i] = bytes[i]}
-                self.stack_size -= 2;
+                } write_mem!(self, 8, u64);
             }
 
             InstType::NATIVE => {

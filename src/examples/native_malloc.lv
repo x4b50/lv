@@ -1,0 +1,33 @@
+; allocate 16 bytes of externam memory
+push 16
+push 4
+native
+; allocate 16 bytes of externam memory
+push 32
+push 4
+native
+dump
+
+; writing to allocated memory
+push 2137420
+push 2
+pick
+dump
+write32
+
+;reading from allocated memory
+dup
+read32
+pop
+dup
+read8
+pop
+
+; free that memory
+push 5
+native
+push 5
+native
+dump
+
+halt
