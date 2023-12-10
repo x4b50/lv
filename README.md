@@ -85,9 +85,8 @@ read64      ;same but 64 bits
 native      ;calls native function with the index at the top of the stack
 ```
 
-So far implementation is finished on ~ day 6
-
 ## TODO
+- [ ] CLEANUP
 - [ ] add versioning system for byte code
 - [x] implement the instruction set
 - [x] implement the assembly
