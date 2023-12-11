@@ -45,6 +45,7 @@ nop         ;no op
 push 7      ;push 7 on the stack
 pop         ;pop the top of the stack
 dup         ;duplicate top of the stack
+swap        ;consume top value and swap second with one that is <top> values below
 pick        ;gets top value and replaces it with one that is that amount lower in the stack
 shove       ;gets two top values and pushes the 1 one lower on the stack by the amount specified by the second
 add         ;add two values at the top of the stack

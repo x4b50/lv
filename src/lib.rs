@@ -27,6 +27,7 @@ macro_rules! read_mem {
     ($self:ident, $type_len:tt, $type:tt) => {
         let mut mem: Option<&Vec<u8>> = None;
         let mut index = -1;
+        // if $self.stack[$self.stack_size-1] >= (1<<48) {
         if $self.stack[$self.stack_size-1] >= (1<<48) {
             let dyn_mem = &$self.dyn_mem[($self.stack[$self.stack_size-1]>>48)as usize-1];
             mem = if let Some(m) = dyn_mem {
@@ -127,6 +128,7 @@ pub enum InstType {
     PUSH,
     POP,
     DUP,
+    SWAP,
     PICK,
     SHOVE,
     ADD,
@@ -281,6 +283,18 @@ impl Lada {
                 }
                 self.stack[self.stack_size] = self.stack[self.stack_size-1];
                 self.stack_size += 1;
+            }
+
+            InstType::SWAP => {
+                if self.stack[self.stack_size-1] < 0 || self.stack[self.stack_size-1] >= self.stack_size as isize {
+                    return Err(ExecErr::IllegalAddr);
+                }
+                self.stack_size -=1;
+                // todo: simplify
+                let adr = self.stack[self.stack_size];
+                let tmp = self.stack[self.stack_size-1];
+                self.stack[self.stack_size-1] = self.stack[self.stack_size -1 -adr as usize];
+                self.stack[self.stack_size -1 -adr as usize] = tmp;
             }
 
             InstType::PICK => {
@@ -921,6 +935,7 @@ pub mod file {
 
                     "pop" => {no_op_err!(operand, line); inst!(POP)}
                     "dup" => {no_op_err!(operand, line); inst!(DUP)}
+                    "swap"=> {no_op_err!(operand, line); inst!(SWAP)}
                     "pick"=> {no_op_err!(operand, line); inst!(PICK)}
                     "shove"=>{no_op_err!(operand, line); inst!(SHOVE)}
                     "add" | "+" => {no_op_err!(operand, line); inst!(ADD)}
