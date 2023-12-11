@@ -17,30 +17,36 @@ macro_rules! f64 {
     };
 }
 
+macro_rules! mem_check {
+    ($self:ident, $type_len:tt, $mem:ident, $index:ident) => {
+        if $self.stack[$self.stack_size-1] >= (1<<48) {
+            let dyn_mem = &mut $self.dyn_mem[($self.stack[$self.stack_size-1]>>48)as usize-1];
+            $mem = if let Some(m) = dyn_mem {
+                if ($self.stack[$self.stack_size-1]&0x0000ffffffffffff) +$type_len > m.len() as isize {return Err(ExecErr::IllegalMemAccess); }
+                $index = 0;
+                Some(m)
+            } else { return Err(ExecErr::IllegalMemAccess); }
+        }
+        if $mem == None {
+            if $self.stack[$self.stack_size-1]+$type_len > $self.arena.len() as isize {
+                return Err(ExecErr::IllegalMemAccess);
+            }
+            $index = $self.stack[$self.stack_size-1];
+            $mem = Some(&mut $self.arena);
+        }
+        if $index < 0 { return Err(ExecErr::NativeError); }
+    };
+}
+
 macro_rules! read_mem {
     ($self:ident, $type_len:tt, $type:tt) => {
         let mut mem: Option<&Vec<u8>> = None;
-        let mut index = -1;
-        // if $self.stack[$self.stack_size-1] >= (1<<48) {
-        if $self.stack[$self.stack_size-1] >= (1<<48) {
-            let dyn_mem = &$self.dyn_mem[($self.stack[$self.stack_size-1]>>48)as usize-1];
-            mem = if let Some(m) = dyn_mem {
-                index = 0;
-                Some(m)
-            }
-            else { return Err(ExecErr::IllegalMemAccess); }
-        }
-        if mem == None {
-            if $self.stack[$self.stack_size-1]-1+$type_len >= $self.arena.len() as isize {
-                return Err(ExecErr::IllegalMemAccess);
-            }
-            index = $self.stack[$self.stack_size-1];
-            mem = Some(&mut $self.arena);
-        }
-        if index < 0 { return Err(ExecErr::NativeError); }
+        let mut index: isize = -1;
+        mem_check!($self, $type_len, mem, index);
         let index = index as usize;
-        let bytes: &[u8; $type_len] = if let Some(m) = mem {
-            m[index..index+$type_len].try_into().unwrap()
+        let bytes: &[u8; $type_len] = if let Some(m) = mem { match
+            m[index..index+$type_len].try_into() {Ok(v)=>{v}
+            Err(_)=>{unreachable!()}}
         } else {return Err(ExecErr::IllegalMemAccess);};
         $self.stack[$self.stack_size-1] = $type::from_ne_bytes(*bytes) as isize;
     };
@@ -49,24 +55,8 @@ macro_rules! read_mem {
 macro_rules! write_mem {
     ($self:ident, $type_len:tt, $type:tt) => {
         let mut mem: Option<&mut Vec<u8>> = None;
-        let mut index = -1;
-        if $self.stack[$self.stack_size-1] >= (1<<48) {
-            let adr = ($self.stack[$self.stack_size-1]>>48)-1;
-            let dyn_mem = &mut $self.dyn_mem[adr as usize];
-            mem = if let Some(m) = dyn_mem {
-                index = 0;
-                Some(m)
-            }
-            else { return Err(ExecErr::IllegalMemAccess); }
-        }
-        if mem == None {
-            if $self.stack[$self.stack_size-1]-1+$type_len >= $self.arena.len() as isize {
-                return Err(ExecErr::IllegalMemAccess);
-            }
-            index = $self.stack[$self.stack_size-1];
-            mem = Some(&mut $self.arena);
-        }
-        if index < 0 { return Err(ExecErr::NativeError); }
+        let mut index: isize = -1;
+        mem_check!($self, $type_len, mem, index);
         let index = index as usize;
         if let Some(m) = mem {
             let bytes = ($self.stack[$self.stack_size-2] as $type).to_ne_bytes();
@@ -282,7 +272,6 @@ impl Lada {
                     return Err(ExecErr::IllegalAddr);
                 }
                 self.stack_size -=1;
-                // todo: simplify
                 let adr = self.stack[self.stack_size];
                 let tmp = self.stack[self.stack_size-1];
                 self.stack[self.stack_size-1] = self.stack[self.stack_size -1 -adr as usize];
@@ -716,9 +705,8 @@ pub mod file {
         }
 
         let mut f_buff: Vec<u8> = vec![];
-        // todo maybe not clone, depending of it is will be usefull after writing
-        f_buff.append(&mut usize::to_ne_bytes(prog.mem.len()).to_vec());
-        f_buff.append(&mut prog.mem.clone());
+        f_buff.extend(usize::to_ne_bytes(prog.mem.len()).iter());
+        f_buff.extend(prog.mem.iter());
         for inst in &prog.inst {
             let byte: &u8 = unsafe {transmute(&inst.kind)};
             f_buff.push(*byte);
@@ -879,14 +867,13 @@ pub mod file {
         }
 
         for entry in unchecked_inst_vec {
-            let inst = entry.0;
             let operand = entry.1;
             let inst_n = entry.2;
             let line = entry.3;
             // this could be collapsed a bunch
             // todo: with a macro create an associated array/hashmap of "name" -> InstType
             inst_vec.push(
-                match inst {
+                match entry.0 {
                     "nop" => {no_op_err!(operand, line); inst!(NOP)}
                     "push" => {
                         if let Ok(op) = operand.parse::<isize>() {
@@ -988,7 +975,6 @@ pub mod file {
                     "native" => {no_op_err!(operand, line); inst!(NATIVE)}
                     "malloc" => {no_op_err!(operand, line); inst!(MALLOC)}
                     "free"   => {no_op_err!(operand, line); inst!(FREE)}
-
                     "halt" => {no_op_err!(operand, line); inst!(HALT)}
                     &_ => {
                         eprintln!("Error: Illegal instruction number: {} or I forgot to include some", inst_vec.len());
@@ -1001,12 +987,8 @@ pub mod file {
         Ok(Program { inst: inst_vec, mem })
     }
 }
-
-/*
-// https://stackoverflow.com/questions/27859822/is-it-possible-to-have-stack-allocated-arrays-with-the-size-determined-at-runtim
-// would require speed testing
+/* https://stackoverflow.com/questions/27859822/is-it-possible-to-have-stack-allocated-arrays-with-the-size-determined-at-runtim  -  would require speed testing
 enum StackVec<T, const N: usize> {
     Inline(usize, [T; N]),
     Dynamic(Vec<T>),
-}
-// */
+} // */

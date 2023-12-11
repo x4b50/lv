@@ -59,8 +59,7 @@ fn main() -> ExitCode {
             else if args[i] == "-m" {debug_mem=true}
             else if args[i] == "-f" {print_type = PrintType::F64}
             else if args[i] == "-b" {print_type = PrintType::HEX}
-            else if args[i] == "-s" {
-                i += 1;
+            else if args[i] == "-s" { i += 1;
                 stack_cap = match args[i].parse::<usize>() {
                     Ok(v) => v,
                     Err(e) => {
@@ -69,8 +68,7 @@ fn main() -> ExitCode {
                     }
                 };
             }
-            else if args[i] == "-a" {
-                i += 1;
+            else if args[i] == "-a" { i += 1;
                 arena_size = match args[i].parse::<usize>() {
                     Ok(v) => v,
                     Err(e) => {
@@ -113,9 +111,7 @@ fn main() -> ExitCode {
                 }ip = vm.ip()
             }
             Err(e) => {
-                if stack_resize && e == ExecErr::StackOverflow {
-                    vm.stack_extend(8); continue;
-                }
+                if stack_resize && e == ExecErr::StackOverflow { vm.stack_extend(8); continue; }
                 if arena_resize && e == ExecErr::IllegalMemAccess {
                     match vm.last_err_inst() {
                         InstType::READ_8  | InstType::READ_16  | InstType::READ_32  | InstType::READ_64 |

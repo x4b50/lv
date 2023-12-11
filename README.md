@@ -89,6 +89,7 @@ native      ;calls native function with the index at the top of the stack
 ## TODO
 - [ ] CLEANUP
 - [ ] add versioning system for byte code
+- [ ] explain bit magic before you forget
 - [x] implement the instruction set
 - [x] implement the assembly
 - [x] imlpement jump labels
@@ -106,7 +107,7 @@ native      ;calls native function with the index at the top of the stack
 - [x] add string literals
 - [ ] extract that 48 for pointers to some global var
 - [ ] add comments in some places
-- [x] use vec::append instead of iterating over bytes
+- [x] use vec::extend instead of iterating over bytes
 - [x] use macros to reduce number of lines (there are technically still some)
 - [x] labels don't parse '_'
 - [ ] add more tests
