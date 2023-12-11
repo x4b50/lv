@@ -1,0 +1,30 @@
+%msg "hi"
+
+push %msg
+dup
+read16
+
+; allocate 16 bytes of externam memory
+push 8
+malloc
+dump
+
+; writing to allocated memory
+push 2137
+push 2
+pick
+write32
+
+;reading from allocated memory
+dup
+read32
+dump
+pop
+dup
+read8
+dump
+pop
+
+; free that memory
+free
+halt
