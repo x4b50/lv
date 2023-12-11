@@ -33,8 +33,8 @@ cargo build -r
 ./src/examples/variadics.sh
 ./src/examples/arena.sh
 ./src/examples/native.sh
+./src/examples/native_malloc.sh
 ./src/examples/resize.sh
-./src/examples/arena_malloc.sh
 ```
 
 ## Writing programs
