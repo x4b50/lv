@@ -689,7 +689,10 @@ pub mod file {
 
             if let InstType::PUSH | InstType::JMP | InstType::JIF = inst_type {
                 assert!(i+7 < buff.len(), "Corrupted file");
-                operand = Some(isize::from_ne_bytes(buff[i..i+8].try_into().unwrap())); //todo: i don't like how it looks
+                operand = Some(isize::from_ne_bytes(match buff[i..i+8].try_into() {
+                    Ok(v) => {v}
+                    Err(_) => {unreachable!()}
+                }));
                 i += 8;
             }
 
@@ -716,9 +719,8 @@ pub mod file {
         for byte in usize::to_ne_bytes(prog.mem.len()) {
             f_buff.push(byte);
         }
-        for i in 0..prog.mem.len() {
-            f_buff.push(prog.mem[i]);
-        }
+        // todo maybe not clone, depending of it is will be usefull after writing
+        f_buff.append(&mut prog.mem.clone());
         for inst in &prog.inst {
             let byte: &u8 = unsafe {transmute(&inst.kind)};
             f_buff.push(*byte);
