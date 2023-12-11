@@ -18,15 +18,15 @@ fn main() -> ExitCode {
     };
 
     if prog.mem.len() > 0{
-        println!("Program memory:");
-        println!("{:?}", prog.mem);
-        match std::str::from_utf8(&prog.mem) {
-            Ok(s) => println!("{:?}", s),
-            Err(_) => {}
-        }
+        println!("%mem \"{}\"", match std::str::from_utf8(&prog.mem) {
+            Ok(s) => {s}
+            Err(e) => {
+                eprintln!("Error parsing string: {e}\nimplement new preproc");
+                return 1.into();
+            }
+        }.replace("\n", "\\n").replace("\t", "\\t").replace("\0", "\\0"));
     }
 
-    println!("Program:");
     let mut prog_str: Vec<u8> = vec![];
     for inst in prog.inst {
         for char in inst.to_string().chars() {
