@@ -21,6 +21,7 @@ Getting help inormation
 ```
 
 ## Running examples
+(Some examples are not implementes optimaly, because of later addition of more fitting instructions)
 ```sh
 cargo build -r
 ./src/examples/hello_world.sh
@@ -105,7 +106,7 @@ native      ;calls native function with the index at the top of the stack
 - [x] add native instructions
 - [x] add hex literals
 - [x] add string literals
-- [ ] extract that 48 for pointers to some global var
+- [x] extract that 48 for pointers to some global var
 - [ ] add comments in some places
 - [x] use vec::extend instead of iterating over bytes
 - [x] use macros to reduce number of lines (there are technically still some)

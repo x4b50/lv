@@ -5,6 +5,9 @@ mod tests;
 use core::fmt;
 use std::{mem::transmute, isize};
 
+const PTR_OFFSET: usize = 48;
+const PTR_MASK: isize = 0x0000ffffffffffff;
+
 macro_rules! no_op_err {
     ($op:ident, $line:ident) => {
         if $op != "" {return Err((ExecErr::IllegalOperand, $line));}
@@ -19,10 +22,10 @@ macro_rules! f64 {
 
 macro_rules! mem_check {
     ($self:ident, $type_len:tt, $mem:ident, $index:ident) => {
-        if $self.stack[$self.stack_size-1] >= (1<<48) {
-            let dyn_mem = &mut $self.dyn_mem[($self.stack[$self.stack_size-1]>>48)as usize-1];
+        if $self.stack[$self.stack_size-1] >= (1<<PTR_OFFSET) {
+            let dyn_mem = &mut $self.dyn_mem[($self.stack[$self.stack_size-1]>>PTR_OFFSET)as usize-1];
             $mem = if let Some(m) = dyn_mem {
-                if ($self.stack[$self.stack_size-1]&0x0000ffffffffffff) +$type_len > m.len() as isize {return Err(ExecErr::IllegalMemAccess); }
+                if ($self.stack[$self.stack_size-1]&PTR_MASK) +$type_len > m.len() as isize {return Err(ExecErr::IllegalMemAccess); }
                 $index = 0;
                 Some(m)
             } else { return Err(ExecErr::IllegalMemAccess); }
@@ -587,12 +590,12 @@ impl Lada {
                     if self.dyn_mem[i] == None {
                         self.dyn_mem[i] = Some(vec![0;self.stack[self.stack_size-1]as usize]);
                         found = true;
-                        adr = (i+1 << 48)as isize;
+                        adr = (i+1 << PTR_OFFSET)as isize;
                         break
                     }
                 }
                 if !found {
-                    adr = (self.dyn_mem.len()+1 << 48)as isize;
+                    adr = (self.dyn_mem.len()+1 << PTR_OFFSET)as isize;
                     self.dyn_mem.push(Some(vec![0;self.stack[self.stack_size-1]as usize]));
                 }
                 if adr < 0 { return Err(ExecErr::NativeError); }
@@ -601,7 +604,7 @@ impl Lada {
 
             InstType::FREE => {
                 self.stack_size -= 1;
-                let adr = (self.stack[self.stack_size] >> 48) as usize-1;
+                let adr = (self.stack[self.stack_size] >> PTR_OFFSET) as usize-1;
                 self.dyn_mem[adr] = None;
             }
             InstType::HALT => self.halted = true
