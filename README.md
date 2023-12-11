@@ -106,7 +106,7 @@ native      ;calls native function with the index at the top of the stack
 - [x] add string literals
 - [ ] extract that 48 for pointers to some global var
 - [ ] add comments in some places
-- [ ] use vec::append instead of iterating over bytes
+- [x] use vec::append instead of iterating over bytes
 - [x] use macros to reduce number of lines (there are technically still some)
 - [x] labels don't parse '_'
 - [ ] add more tests

@@ -716,10 +716,8 @@ pub mod file {
         }
 
         let mut f_buff: Vec<u8> = vec![];
-        for byte in usize::to_ne_bytes(prog.mem.len()) {
-            f_buff.push(byte);
-        }
         // todo maybe not clone, depending of it is will be usefull after writing
+        f_buff.append(&mut usize::to_ne_bytes(prog.mem.len()).to_vec());
         f_buff.append(&mut prog.mem.clone());
         for inst in &prog.inst {
             let byte: &u8 = unsafe {transmute(&inst.kind)};
