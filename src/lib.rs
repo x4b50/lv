@@ -17,12 +17,6 @@ macro_rules! f64 {
     };
 }
 
-macro_rules! f64_bool {
-    ($dest:expr, $op:tt, $source:expr) => {
-        unsafe{ $dest = (transmute::<isize, f64>($dest) $op transmute::<isize, f64>($source)) as isize;}
-    };
-}
-
 macro_rules! read_mem {
     ($self:ident, $type_len:tt, $type:tt) => {
         let mut mem: Option<&Vec<u8>> = None;
@@ -151,8 +145,6 @@ pub enum InstType {
     NEG,
     LT,
     GT,
-    LTF,
-    GTF,
     PRINT,
     SHOUT,
     DUMP,
@@ -473,22 +465,6 @@ impl Lada {
                     return Err(ExecErr::StackUnderflow)
                 }
                 self.stack[self.stack_size-2] = (self.stack[self.stack_size-2] > self.stack[self.stack_size-1]) as isize;
-                self.stack_size -= 1;
-            }
-
-            InstType::LTF => {
-                if self.stack_size < 2 {
-                    return Err(ExecErr::StackUnderflow)
-                }
-                f64_bool!(self.stack[self.stack_size-2], <, self.stack[self.stack_size-1]);
-                self.stack_size -= 1;
-            }
-
-            InstType::GTF => {
-                if self.stack_size < 2 {
-                    return Err(ExecErr::StackUnderflow)
-                }
-                f64_bool!(self.stack[self.stack_size-2], >, self.stack[self.stack_size-1]);
                 self.stack_size -= 1;
             }
 
@@ -986,8 +962,6 @@ pub mod file {
                     "neg"=> {no_op_err!(operand, line); inst!(NEG)}
                     "lt" => {no_op_err!(operand, line); inst!(LT)}
                     "gt" => {no_op_err!(operand, line); inst!(GT)}
-                    "ltf"=> {no_op_err!(operand, line); inst!(LTF)}
-                    "gtf"=> {no_op_err!(operand, line); inst!(GTF)}
                     "print" | "." => {no_op_err!(operand, line); inst!(PRINT)}
                     "shout"=> {no_op_err!(operand, line); inst!(SHOUT)}
                     "dump" => {no_op_err!(operand, line); inst!(DUMP)}
