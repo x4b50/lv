@@ -17,6 +17,6 @@ label:
     shout
     dup
     push %threshold
-    ltf
+    lt
     jmpif label
     halt
