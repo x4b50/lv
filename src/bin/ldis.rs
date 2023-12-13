@@ -17,14 +17,22 @@ fn main() -> ExitCode {
         }
     };
 
-    if prog.mem.len() > 0{
-        println!("%mem \"{}\"", match std::str::from_utf8(&prog.mem) {
-            Ok(s) => {s}
-            Err(e) => {
-                eprintln!("Error parsing string: {e}\nimplement new preproc");
-                return 1.into();
-            }
-        }.replace("\n", "\\n").replace("\t", "\\t").replace("\0", "\\0"));
+    let mut i = 0;
+    while i < prog.mem.len() {
+        if i+8 <= prog.mem.len() {
+            println!("@mem{} {}", i, isize::from_ne_bytes(match prog.mem[i..i+8].try_into() {
+                Ok(v) => {v} Err(_) => {unreachable!()}
+            }));
+            i += 8;
+        }
+        else {
+            let mut v: Vec<u8> = prog.mem[i..].to_vec();
+            v.append(&mut vec![0u8;i+8-prog.mem.len()]);
+            println!("@mem{} {}", i, isize::from_ne_bytes(match v[..].try_into() {
+                Ok(v) => {v} Err(_) => {unreachable!()}
+            }));
+            break;
+        };
     }
 
     let mut prog_str: Vec<u8> = vec![];

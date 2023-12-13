@@ -107,8 +107,8 @@ native      ;calls native function with the index at the top of the stack
 - [x] add hex literals
 - [x] add string literals
 - [x] extract that 48 for pointers to some global var
-- [ ] add compile time arena allocation for non-strings
-- [ ] make disassembler worthy presenting
+- [x] add compile time arena allocation for non-strings
+- [x] make disassembler worthy presenting
 - [ ] add comments in some places
 - [x] use vec::extend instead of iterating over bytes
 - [x] use macros to reduce number of lines (there are technically still some)

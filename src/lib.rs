@@ -828,9 +828,15 @@ pub mod file {
                             } else if let Ok(v) = value.parse::<isize>() {
                                 if line.starts_with('@') {let adr = mem.len()as isize; mem.extend(v.to_ne_bytes()); adr}
                                 else {v}
-                            } else if let Ok(v) = isize::from_str_radix(operand.trim_start_matches("0x"), 16) {
+                            } else if let Ok(v) = value.parse::<usize>() {
+                                if line.starts_with('@') {let adr = mem.len()as isize; mem.extend(v.to_ne_bytes()); adr}
+                                else {v as isize}
+                            } else if let Ok(v) = isize::from_str_radix(value.trim_start_matches("0x"), 16) {
                                 if line.starts_with('@') {let adr = mem.len()as isize; mem.extend(v.to_ne_bytes()); adr}
                                 else {v}
+                            } else if let Ok(v) = usize::from_str_radix(value.trim_start_matches("0x"), 16) {
+                                if line.starts_with('@') {let adr = mem.len()as isize; mem.extend(v.to_ne_bytes()); adr}
+                                else {v as isize}
                             } else if let Ok(v) = value.parse::<f64>() {
                                 if line.starts_with('@') {let adr = mem.len()as isize; mem.extend(v.to_ne_bytes()); adr}
                                 else {unsafe {transmute::<f64, isize>(v)}}
