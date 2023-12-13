@@ -1,4 +1,4 @@
-#[cfg(target_os = "linux")]
+// #[cfg(target_os = "linux")]
 pub mod linux;
 #[cfg(test)]
 mod tests;
@@ -576,7 +576,6 @@ impl Lada {
                     return Err(ExecErr::StackUnderflow);
                 }
                 self.stack_size -= 1;
-                #[cfg(target_os = "linux")]
                 match self.native(self.stack[self.stack_size] as usize) {
                     Ok(_) => {}
                     Err(e) => return Err(e)

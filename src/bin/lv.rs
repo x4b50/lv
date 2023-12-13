@@ -119,9 +119,9 @@ fn main() -> ExitCode {
                             vm.resize_arena(vm.get_stack_top(1)[0] as usize +8);
                             continue;
                         }
-                        i => {
-                            eprintln!("{i:?}");
-                            eprintln!("This shouldn't typically happen, probably a native function tried to access arena");
+                        _ => {
+                            eprintln!("\nERROR: {:?}, Instruciton: {:?}", e, vm.inst(vm.ip()));
+                            eprintln!("This shouldn't typically happen, probably a native function tried to access arena and failed");
                             return 1.into();
                         }
                     }
@@ -129,7 +129,7 @@ fn main() -> ExitCode {
                 if debug {eprintln!("{:#?}", vm)}
                 eprintln!("\nERROR: {:?}, Instruciton: {}", e,
                           if vm.prog_len() > vm.ip() {
-                              format!("{}", vm.inst(vm.ip()).clone())
+                              format!("{}", vm.inst(vm.ip()))
                           } else {
                               format!("Expected: {}", lv::inst!(HALT))
                           });
