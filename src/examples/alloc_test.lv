@@ -1,6 +1,6 @@
-%msg "hi"
+@msg "hi"
 
-push %msg
+push @msg
 dup
 read16
 

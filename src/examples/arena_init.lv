@@ -1,0 +1,13 @@
+@msg "hi"
+@value 4202137
+
+push @msg
+dup
+read16
+
+push @value
+dup
+read64
+
+dump
+halt

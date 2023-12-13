@@ -1,9 +1,9 @@
-%msg "Hello World!\n"   ;has 0th index in the local memory
-%msg_len ""             ;adress of msg_len will be the length of msg, in other cases you would have to subtract msg
+@msg "Hello World!\n"   ;has 0th index in the local memory
+@msg_len ""             ;adress of msg_len will be the length of msg, in other cases you would have to subtract msg
 
 start:
-    push %msg
-    push %msg_len
+    push @msg
+    push @msg_len
     push 1
     native
 halt

@@ -812,26 +812,29 @@ pub mod file {
             }
 
             char_count = 0;
-            if line.starts_with('%') {
+            if line.starts_with('%') || line.starts_with('@') {
                 for char in line.chars() {
                     if char == ' ' {
                         let (const_name, mut value) = line.split_at(char_count);
                         (_,value) = value.split_at(1);
                         let constant = Constant{
                             name: const_name,
-                            value: if value.starts_with('"') {
+                            value: if line.starts_with('@') && value.starts_with('"') {
                                 let str = value.trim_matches('"').replace("\\n", "\n").replace("\\t", "\t").replace("\\0", "\0");
                                 let bytes = str.as_bytes();
                                 let adr = mem.len();
-                                for byte in bytes {
-                                    mem.push(*byte);
-                                }
+                                mem.extend(bytes);
                                 adr as isize
-                            }
-                            else if let Ok(v) = value.parse::<isize>() {v} 
-                            else if let Ok(v) = isize::from_str_radix(operand.trim_start_matches("0x"), 16) {v}
-                            else if let Ok(v) = value.parse::<f64>() {unsafe {transmute::<f64, isize>(v)}}
-                            else {
+                            } else if let Ok(v) = value.parse::<isize>() {
+                                if line.starts_with('@') {let adr = mem.len()as isize; mem.extend(v.to_ne_bytes()); adr}
+                                else {v}
+                            } else if let Ok(v) = isize::from_str_radix(operand.trim_start_matches("0x"), 16) {
+                                if line.starts_with('@') {let adr = mem.len()as isize; mem.extend(v.to_ne_bytes()); adr}
+                                else {v}
+                            } else if let Ok(v) = value.parse::<f64>() {
+                                if line.starts_with('@') {let adr = mem.len()as isize; mem.extend(v.to_ne_bytes()); adr}
+                                else {unsafe {transmute::<f64, isize>(v)}}
+                            } else {
                                 eprintln!("Invalid argument in macro definition");
                                 return Err((ExecErr::IllegalOperand, line_count));
                             }
