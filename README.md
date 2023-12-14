@@ -115,14 +115,13 @@ native      ;calls native function with the index at the top of the stack
 - [x] add string literals
 - [x] extract that 48 for pointers to some global var
 - [x] add compile time arena allocation for non-strings
-- [x] make disassembler worthy presenting
 - [x] use vec::extend instead of iterating over bytes
 - [x] use macros to reduce number of lines (there are technically still some)
-- [x] labels don't parse '_'
+- [x] labels don't parse "_"
 - [x] add --help
 - [x] compiler might not give errors on pushing not defined constants/labels
 - [x] make push the only inst w/ operand
 - [x] do label/const substitution while parsing instructions
 - [x] crash on redefined labels
 - [x] use from_bites for vector conversion
-- [x] reduce inst size (dynamic interpretation)
+- [x] reduce inst size
