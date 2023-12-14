@@ -88,6 +88,7 @@ native      ;calls native function with the index at the top of the stack
 ```
 
 ## TODO
+Make all the below issues, or something else that makes sense
 - [ ] do some clean up
 - [ ] add versioning system for byte code
 - [ ] explain the bit shenanigans
@@ -95,33 +96,6 @@ native      ;calls native function with the index at the top of the stack
 - [ ] add more tests
 - [ ] include files https://www.youtube.com/watch?v=k6qk6lT4S3U ~2:00:00+
 - [ ] use split_whitespace() while parsing
+- [ ] make arena static and possibly stack allocated
 - [ ] experiment with stack allocated inst vec
-- [ ] implement the language
 - [ ] create some docs for the assembly
-- [x] implement the instruction set
-- [x] implement the assembly
-- [x] imlpement jump labels
-- [x] make readme useful
-- [x] make a disassembler (easy)
-- [x] add compile time value definitions
-- [x] make compiler errors give line, not instruction, numbers
-- [x] make floats work
-- [x] add bitwise instructions
-- [x] add subroutines
-- [x] add heap w/ pointers on the stack
-- [x] add malloc
-- [x] add native instructions
-- [x] add hex literals
-- [x] add string literals
-- [x] extract that 48 for pointers to some global var
-- [x] add compile time arena allocation for non-strings
-- [x] use vec::extend instead of iterating over bytes
-- [x] use macros to reduce number of lines (there are technically still some)
-- [x] labels don't parse "_"
-- [x] add --help
-- [x] compiler might not give errors on pushing not defined constants/labels
-- [x] make push the only inst w/ operand
-- [x] do label/const substitution while parsing instructions
-- [x] crash on redefined labels
-- [x] use from_bites for vector conversion
-- [x] reduce inst size
