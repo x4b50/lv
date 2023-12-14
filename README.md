@@ -7,7 +7,7 @@ Compiling the program, running the compiler and the virtual machine with stack s
 ``` sh
 cargo build -r
 ./lc code.lv code.lb
-./lv code.lb 32 -d
+./lv code.lb -s 32 -d
 ```
 
 You can also disassemble the binary.
@@ -58,13 +58,13 @@ shr         ;perform shift right
 and         ;perform bitwise and on two top values
 or          ;perform bitwise or on two top values
 xor         ;perform bitwise xor on two top values
-not         ;perform bitwise not on two top values
+not         ;perform bitwise not on the top value
 jmp 10      ;jump to instruction numer 10 (0 based)
 jmpif 2     ;or jif - jump to instruction numer 2 if check was true
 jmp start   ;jmp to 'start' label
 eq          ;check if two values at the top are equal substitutes them with the result
 gt          ;check if the value below is greater than the one on top
-lt          ;opposite of gt
+lt          ;check if less than
 neg         ;negate the bool value
 print       ;or . - print the value at the top of the stack (doesn't pop it)
 shout       ;prints and pops
@@ -88,9 +88,16 @@ native      ;calls native function with the index at the top of the stack
 ```
 
 ## TODO
-- [ ] CLEANUP
+- [ ] do some clean up
 - [ ] add versioning system for byte code
-- [ ] explain bit magic before you forget
+- [ ] explain the bit shenanigans
+- [ ] add comments in some places
+- [ ] add more tests
+- [ ] include files https://www.youtube.com/watch?v=k6qk6lT4S3U ~2:00:00+
+- [ ] use split_whitespace() while parsing
+- [ ] experiment with stack allocated inst vec
+- [ ] implement the language
+- [ ] create some docs for the assembly
 - [x] implement the instruction set
 - [x] implement the assembly
 - [x] imlpement jump labels
@@ -109,21 +116,13 @@ native      ;calls native function with the index at the top of the stack
 - [x] extract that 48 for pointers to some global var
 - [x] add compile time arena allocation for non-strings
 - [x] make disassembler worthy presenting
-- [ ] add comments in some places
 - [x] use vec::extend instead of iterating over bytes
 - [x] use macros to reduce number of lines (there are technically still some)
 - [x] labels don't parse '_'
-- [ ] add more tests
 - [x] add --help
 - [x] compiler might not give errors on pushing not defined constants/labels
 - [x] make push the only inst w/ operand
 - [x] do label/const substitution while parsing instructions
 - [x] crash on redefined labels
-- [ ] include files https://www.youtube.com/watch?v=k6qk6lT4S3U ~2:00:00+
-- [ ] use split_whitespace() while parsing
 - [x] use from_bites for vector conversion
-- [ ] some refactoring regarding instruction storage/parsing https://www.youtube.com/watch?v=LN9vrbBNG64 ~1:50:00
 - [x] reduce inst size (dynamic interpretation)
-- [ ] experiment with stack allocated inst vec
-- [ ] implement the language
-- might change the executable names
